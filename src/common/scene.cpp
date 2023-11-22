@@ -1,7 +1,8 @@
 #include "defs.h"
+#include "mesh.h"
 #include "scene.h"
 
-
+#include <cstdint>
 #include <cstring>
 #include <stdexcept>
 
@@ -17,6 +18,8 @@ Scene::Scene(std::string scene) {
         load_obj(scene);
     } else 
         throw std::runtime_error("Unexpected file format " + extension);
+
+   SUCC("Finished loading " + std::to_string(meshes.size()) + " meshes."); 
 }
 
 void
@@ -38,12 +41,56 @@ Scene::load_obj(std::string scene) {
     if (!warn.empty())
         WARN("TinyObjLoader Warning: " + warn);
 
+
+    Mesh m;
     for (const auto& shape : shapes) {
         const auto& mesh = shape.mesh;
 
         // TODO: Resolve index tuples here (vertex, normal)     
+        std::map<std::tuple<uint32_t, uint32_t>, uint32_t> index_map; 
 
+        Geometry g;
+        // Loop over faces in the mesh
+        for (size_t f = 0; f < mesh.num_face_vertices.size(); f++) {
+            size_t fv = size_t(mesh.num_face_vertices[f]);
+
+            if (fv != 3) {
+                ERR("Found non-triangular primitive with " + std::to_string(fv) + " vertices.");
+                return;
+            }
+
+            // Loop over vertices in the face
+            for (size_t v = 0; v < fv; v++){
+
+                tinyobj::index_t idx = mesh.indices[3 * f + v]; 
+
+                auto key = std::make_tuple(idx.vertex_index, idx.normal_index);
+
+                uint32_t g_index = 0;
+                if (index_map.find(key) != index_map.end()) {
+                    g_index = index_map[key];
+                } else {
+                    g_index = g.indices.size();
+
+                    g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index]);
+                    g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index + 1]);
+                    g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index + 2]);
+
+                    if (idx.normal_index != uint32_t(-1)) {
+                        g.normals.emplace_back(attrib.normals[3 * idx.normal_index]);
+                        g.normals.emplace_back(attrib.normals[3 * idx.normal_index + 1]);
+                        g.normals.emplace_back(attrib.normals[3 * idx.normal_index + 2]);
+                    }
+
+                    index_map[key] = g_index;
+                }
+                g.indices.push_back(g_index);
+            }
+        }
+        SUCC("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ", n: " + std::to_string(g.normals.size()) + ")");
+        m.geometries.push_back(g);
     }
+    meshes.push_back(m);
 }
 
 }
