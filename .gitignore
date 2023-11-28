@@ -62,3 +62,6 @@ build/
 
 # MacOS files
 .DS_Store
+
+# Allow resource files
+!resources/*
