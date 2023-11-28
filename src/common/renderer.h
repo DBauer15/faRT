@@ -10,12 +10,11 @@ namespace fart {
 
 struct Renderer {
     public:
-        void init(const Scene &scene);
-        void render(const Window &window);
+        virtual ~Renderer() = default;
 
-    private:
-        struct Impl;
-        std::unique_ptr<Impl> pimpl;
+        virtual void init(Scene &scene, Window &window) = 0;
+        virtual void render() = 0;
+        virtual std::string name() = 0;
 };
 
 }

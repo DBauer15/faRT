@@ -1,5 +1,7 @@
 #pragma once
 
+#include "renderer.h"
+#include "defs.h"
 #include "window.h"
 #include "scene.h"
 #include <memory>
@@ -21,6 +23,7 @@ struct App {
         Window m_window{WIDTH, HEIGHT, "Hello FaRT!"};
 
         std::unique_ptr<Scene> m_scene {nullptr};
+        std::unique_ptr<Renderer> m_renderer {nullptr};
 };
 
 }

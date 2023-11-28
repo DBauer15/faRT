@@ -15,6 +15,7 @@ struct Window {
         Window &operator=(const Window &) = delete;
 
         bool shouldClose() { return glfwWindowShouldClose(m_window); }
+        GLFWwindow* getGlfwWindow() { return m_window; }
 
     private:
         void initWindow();

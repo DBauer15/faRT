@@ -3,12 +3,17 @@ project(fart)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+#if (APPLE)
+    #set(CMAKE_OSX_ARCHITECTURES "x86_64")
+#endif()
+
 if (NOT WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 endif()
 
 # Compile options
-option(BUILD_OPENGL_RENDERER "Build the OpenGL renderer." ON)
+option(BUILD_OPENGL_RENDERER "Build the OpenGL renderer." OFF)
+option(BUILD_METAL_RENDERER "Build the Metal renderer." ON)
 
 # Write all binaries directly to the build directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})

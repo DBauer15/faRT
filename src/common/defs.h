@@ -1,3 +1,5 @@
+#include <iostream>
+
 #define STDOUT_RESET    "\033[0m"
 #define STDOUT_RED      "\033[31m"
 #define STDOUT_YELLOW   "\033[33m"

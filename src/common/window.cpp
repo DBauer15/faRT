@@ -15,9 +15,14 @@ Window::~Window() {
 void
 Window::initWindow() {
     glfwInit();
+
+#if BUILD_OPENGL_RENDERER
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+#else 
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#endif
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     m_window = glfwCreateWindow(m_width, m_height, m_window_title.c_str(), nullptr, nullptr);

@@ -1,6 +1,6 @@
-if (BUILD_OPENGL_RENDERER)
-    add_subdirectory(opengl)
-endif()
+#add_subdirectory(opengl)
+add_subdirectory(metal)
+
 
 add_executable(fart
     common/app.h
@@ -23,7 +23,8 @@ target_link_libraries(fart PUBLIC
     glfw
     tinyobjloader
     glm::glm
-    fart_opengl)
+    renderer_metal
+    )
 
 install(TARGETS fart
         RUNTIME DESTINATION bin)
