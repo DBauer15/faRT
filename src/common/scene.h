@@ -15,6 +15,8 @@ struct Scene {
 
         Scene(const Scene &) = delete;
         Scene &operator=(const Scene &) = delete;
+        
+        std::vector<Mesh>& getMeshes() { return meshes; };
 
     private:
         void load_obj(std::string scene);

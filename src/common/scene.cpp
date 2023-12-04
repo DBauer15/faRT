@@ -41,6 +41,7 @@ Scene::load_obj(std::string scene) {
     if (!warn.empty())
         WARN("TinyObjLoader Warning: " + warn);
 
+    SUCC("Parsed OBJ file " + scene);
 
     Mesh m;
     for (const auto& shape : shapes) {
@@ -50,6 +51,10 @@ Scene::load_obj(std::string scene) {
         std::map<std::tuple<uint32_t, uint32_t>, uint32_t> index_map; 
 
         Geometry g;
+
+        // Keep track of all the unique indices we use
+        uint32_t g_n_unique_idx_cnt = 0;
+
         // Loop over faces in the mesh
         for (size_t f = 0; f < mesh.num_face_vertices.size(); f++) {
             size_t fv = size_t(mesh.num_face_vertices[f]);
@@ -68,9 +73,9 @@ Scene::load_obj(std::string scene) {
 
                 uint32_t g_index = 0;
                 if (index_map.find(key) != index_map.end()) {
-                    g_index = index_map[key];
+                    g_index = index_map.at(key);
                 } else {
-                    g_index = g.indices.size();
+                    g_index = g_n_unique_idx_cnt++;
 
                     g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index]);
                     g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index + 1]);

@@ -1,10 +1,12 @@
-#add_subdirectory(opengl)
+add_subdirectory(opengl)
 add_subdirectory(metal)
 
 
 add_executable(fart
     common/app.h
     common/app.cpp
+    common/camera.h
+    common/camera.cpp
     common/mesh.h
     common/scene.h
     common/scene.cpp
@@ -23,8 +25,15 @@ target_link_libraries(fart PUBLIC
     glfw
     tinyobjloader
     glm::glm
-    renderer_metal
     )
+
+if (BUILD_OPENGL_RENDERER)
+    target_link_libraries(fart PUBLIC renderer_opengl)
+    target_compile_definitions(fart PUBLIC OPENGL_RENDERER)
+elseif (BUILD_METAL_RENDERER)
+    target_link_libraries(fart PUBLIC renderer_metal)
+    target_compile_definitions(fart PUBLIC METAL_RENDERER)
+endif()
 
 install(TARGETS fart
         RUNTIME DESTINATION bin)
