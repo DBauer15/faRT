@@ -18,8 +18,8 @@ MetalRenderer::~MetalRenderer() {
 }
 
 void
-MetalRenderer::init(Scene& scene, Window& window) {
-    m_scene.reset(&scene);
+MetalRenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &window) {
+    m_scene = scene;
     m_device = MTL::CreateSystemDefaultDevice();
     m_command_queue = m_device->newCommandQueue();
 
@@ -27,7 +27,7 @@ MetalRenderer::init(Scene& scene, Window& window) {
     m_layer ->setDevice(m_device);
     m_layer->setFramebufferOnly(true);
     m_layer->setPixelFormat(MTL::PixelFormat::PixelFormatBGRA8Unorm_sRGB);
-    addLayerToWindow(window.getGlfwWindow(), m_layer);
+    addLayerToWindow(window->getGlfwWindow(), m_layer);
 
     MTL::Library* library = m_device->newDefaultLibrary();
     MTL::Function* vertexFunction = library->newFunction(NS::String::string("vertexShader", NS::StringEncoding::ASCIIStringEncoding));
@@ -51,7 +51,7 @@ MetalRenderer::init(Scene& scene, Window& window) {
 }
 
 void
-MetalRenderer::render() {
+MetalRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 up) {
     m_drawable = m_layer->nextDrawable();
     sendRenderCommand();
     m_drawable->release();

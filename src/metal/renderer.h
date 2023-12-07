@@ -20,16 +20,16 @@ struct MetalRenderer : Renderer {
     public:
         ~MetalRenderer();
 
-        virtual void init(Scene &scene, Window &window) override; 
+        virtual void init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &window) override; 
 
-        virtual void render() override;
+        virtual void render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 up) override;
 
         virtual std::string name() override {
             return "Metal Renderer";
         }
 
     private:
-        std::unique_ptr<Scene> m_scene { nullptr };
+        std::shared_ptr<Scene> m_scene { nullptr };
 
         MTL::Device*                m_device                { nullptr };
         MTL::CommandQueue*          m_command_queue         { nullptr };
