@@ -38,14 +38,10 @@ layout(std430, binding = 0) buffer geometry0 {
 };
 
 layout(std430, binding = 1) buffer geometry1 {
-    vec4 normals [];
-};
-
-layout(std430, binding = 2) buffer geometry2 {
     uint indices [];
 };
 
-layout(std430, binding = 3) buffer accel0 {
+layout(std430, binding = 2) buffer accel0 {
     BVHNode bvh [];
 };
 

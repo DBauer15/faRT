@@ -27,9 +27,8 @@ void
 OpenGlRenderer::initBuffers() {
     m_quad = std::make_unique<Buffer>(GL_ARRAY_BUFFER);
     m_vertices = std::make_unique<StorageBuffer>(0);
-    m_normals = std::make_unique<StorageBuffer>(1);
-    m_indices = std::make_unique<StorageBuffer>(2);
-    m_bvh_buffer = std::make_unique<StorageBuffer>(3);
+    m_indices = std::make_unique<StorageBuffer>(1);
+    m_bvh_buffer = std::make_unique<StorageBuffer>(2);
 
     uint32_t index_offset = 0;
     std::vector<float> vertices;
@@ -44,13 +43,6 @@ OpenGlRenderer::initBuffers() {
                 if (i % 3 == 2)
                     vertices.emplace_back(0);
             }
-            for (size_t i = 0; i < geometry.normals.size(); i++) {
-                normals.emplace_back(geometry.normals[i]);
-
-                // TODO this is to obay the 16-bit alignment of SSBOs and should be optimized
-                if (i % 3 == 2)
-                    normals.emplace_back(0);
-            }
             for (auto& idx : geometry.indices)
                 indices.emplace_back(idx+index_offset);
 
@@ -59,7 +51,6 @@ OpenGlRenderer::initBuffers() {
     }
     
     m_vertices->setData(vertices);
-    m_normals->setData(normals);
     m_indices->setData(indices);
     m_bvh_buffer->setData(m_bvh->getNodes());
 
@@ -90,7 +81,6 @@ OpenGlRenderer::initBindings() {
     m_vertex_array->bind();
     m_quad->bind();
     m_vertices->bind();
-    m_normals->bind();
     m_indices->bind();
     m_bvh_buffer->bind();
     m_vertex_array->addVertexAttribute(/*shader=*/*m_shader.get(), 
@@ -98,16 +88,9 @@ OpenGlRenderer::initBindings() {
                                        /*size=*/3, 
                                        /*dtype=*/GL_FLOAT, 
                                        /*stride=*/3 * sizeof(float));
-    //m_normals->bind();
-    //m_vertex_array->addVertexAttribute([>shader=<]*m_shader.get(), 
-                                       //[>attribute_name=<]"a_normal", 
-                                       //[>size=<]3, 
-                                       //[>dtype=<]GL_FLOAT, 
-                                       //[>stride=<]3 * sizeof(float));
     m_vertex_array->unbind();
     m_quad->unbind();
     m_vertices->unbind();
-    m_normals->unbind();
     m_indices->unbind();
     m_bvh_buffer->unbind();
 }
@@ -142,7 +125,6 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
 
     m_vertex_array->bind();
     m_vertices->bind();
-    m_normals->bind();
     m_indices->bind();
     m_bvh_buffer->bind();
 
@@ -152,7 +134,6 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
 
     m_vertex_array->unbind();
     m_vertices->unbind();
-    m_normals->unbind();
     m_indices->unbind();
     m_bvh_buffer->unbind();
     m_shader->unuse();
