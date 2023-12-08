@@ -32,7 +32,7 @@ namespace fart {
 // Project the point in [-1, 1] screen space onto the arcball sphere
 static glm::quat screen_to_arcball(const glm::vec2 &p);
 
-Camera::Camera(const glm::vec3 &eye, const glm::vec3 &center, const glm::vec3 &up)
+Camera::Camera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up)
 {
     const glm::vec3 dir = center - eye;
     glm::vec3 z_axis = glm::normalize(dir);

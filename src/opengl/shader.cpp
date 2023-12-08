@@ -92,6 +92,18 @@ Shader::loadShaderStage(std::string binary_path, GLenum stage) {
 
     if (!status) {
         ERR("Failed to load shader: " + binary_path);
+        GLint maxLength = 0;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+
+        // The maxLength includes the NULL character
+        std::vector<GLchar> errorLog(maxLength);
+        glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
+
+        ERR(&errorLog[0]);
+
+        // Provide the infolog in whatever manor you deem best.
+        // Exit with failure.
+        glDeleteShader(shader); // Don't leak the shader.
         return 0;
     } 
 

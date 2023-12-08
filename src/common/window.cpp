@@ -29,6 +29,9 @@ Window::initWindow() {
     m_window = glfwCreateWindow(m_width, m_height, m_window_title.c_str(), nullptr, nullptr);
 
     glfwSetWindowUserPointer(m_window, this);
+    glfwSetWindowFocusCallback(m_window, [](GLFWwindow* window, int focus) {
+        static_cast<Window*>(glfwGetWindowUserPointer(window))->windowFocusCallback(window, focus);
+    });
     glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos) {
         static_cast<Window*>(glfwGetWindowUserPointer(window))->cursorPositionCallback(window, xpos, ypos);
     });

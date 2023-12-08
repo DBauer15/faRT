@@ -41,13 +41,29 @@ struct Buffer {
         size_t getNElements() { return m_n_elements; }
         size_t getSize() { return m_size; }
 
-    private:
+    protected:
         GLuint m_buffer {0};
         GLenum m_type;
         GLenum m_usage;
 
         size_t m_n_elements {0};
         size_t m_size {0};
+};
+
+struct StorageBuffer : public Buffer {
+
+    public: 
+        StorageBuffer(GLuint binding_point) :
+            Buffer(GL_SHADER_STORAGE_BUFFER, GL_STATIC_READ),
+            m_binding_point(binding_point) {
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_binding_point, m_buffer);
+        }
+
+        ~StorageBuffer() = default;
+
+    private:
+        GLuint m_binding_point {0};
+        
 };
 
 }

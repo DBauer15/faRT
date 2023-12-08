@@ -47,7 +47,7 @@ public:
     /* Create an arcball camera focused on some center point
      * screen: [win_width, win_height]
      */
-    Camera(const glm::vec3 &eye, const glm::vec3 &center, const glm::vec3 &up);
+    Camera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up);
 
     /* Rotate the camera from the previous mouse position to the current
      * one. Mouse positions should be in normalized device coordinates

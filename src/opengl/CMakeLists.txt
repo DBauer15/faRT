@@ -8,6 +8,8 @@ find_package(GLEW REQUIRED)
 add_library(renderer_opengl
     buffer.cpp
     buffer.h
+    bvh.cpp
+    bvh.h
     renderer.cpp
     renderer.h
     shader.cpp

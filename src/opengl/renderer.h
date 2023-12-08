@@ -1,7 +1,8 @@
 #pragma once
 
 #include "buffer.h"
-#include "opengl/vertex_array.h"
+#include "bvh.h"
+#include "vertex_array.h"
 #include "shader.h"
 #include "common/renderer.h"
 #include "common/window.h"
@@ -19,14 +20,19 @@ struct OpenGlRenderer : Renderer {
     private:
         std::shared_ptr<Scene> m_scene;
         std::shared_ptr<Window> m_window;
+        std::shared_ptr<BVH> m_bvh;
 
-        std::unique_ptr<Buffer> m_vertices;
-        std::unique_ptr<Buffer> m_normals;
-        std::unique_ptr<Buffer> m_indices;
+        std::unique_ptr<Buffer> m_quad;
+
+        std::unique_ptr<StorageBuffer> m_bvh_buffer;
+        std::unique_ptr<StorageBuffer> m_vertices;
+        std::unique_ptr<StorageBuffer> m_normals;
+        std::unique_ptr<StorageBuffer> m_indices;
 
         std::unique_ptr<VertexArray> m_vertex_array;
         std::unique_ptr<Shader> m_shader;
 
+        void initBVH();
         void initBuffers();
         void initShaders();
         void initBindings();

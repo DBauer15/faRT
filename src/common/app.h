@@ -30,12 +30,8 @@ struct App {
         void run();
 
     private:
-        Camera m_camera{
-            { 0.f, 0.f, -1.f },    // eye
-            { 0.f, 0.f, 0.f },      // center
-            { 0.f, 1.f, 0.f }       // up
-        };
-
+        
+        std::unique_ptr<Camera> m_camera {nullptr};
         std::shared_ptr<Window> m_window {nullptr};
         std::shared_ptr<Scene> m_scene {nullptr};
         std::unique_ptr<Renderer> m_renderer {nullptr};

@@ -5,12 +5,12 @@
 #include "common/defs.h"
 
 #define MAKE_UNIFORM_SETTER(fn_name, TC, T, program) \
-    void fn_name (const std::string &name, T* value) { \
+    void fn_name (const std::string &name, const T* value) { \
         glUniform##TC(glGetUniformLocation(program, name.c_str()), 1, value); \
     }
 
 #define MAKE_UNIFORM_MATRIX_SETTER(fn_name, TC, T, program) \
-    void fn_name (const std::string &name, T* value, bool transpose = false) { \
+    void fn_name (const std::string &name, const T* value, bool transpose = false) { \
         glUniformMatrix##TC(glGetUniformLocation(program, name.c_str()), 1, transpose, value); \
     }
 
@@ -31,6 +31,9 @@ struct Shader {
         MAKE_UNIFORM_SETTER(setInt, 1iv, int, m_program);
         MAKE_UNIFORM_SETTER(setInt2, 2iv, int, m_program);
         MAKE_UNIFORM_SETTER(setInt3, 3iv, int, m_program);
+        MAKE_UNIFORM_SETTER(setUInt, 1uiv, uint32_t, m_program);
+        MAKE_UNIFORM_SETTER(setUInt2, 2uiv, uint32_t, m_program);
+        MAKE_UNIFORM_SETTER(setUInt3, 3uiv, uint32_t, m_program);
         MAKE_UNIFORM_SETTER(setFloat, 1fv, float, m_program);
         MAKE_UNIFORM_SETTER(setFloat2, 2fv, float, m_program);
         MAKE_UNIFORM_SETTER(setFloat3, 3fv, float, m_program);

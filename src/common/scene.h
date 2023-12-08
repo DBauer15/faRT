@@ -16,11 +16,17 @@ struct Scene {
         Scene(const Scene &) = delete;
         Scene &operator=(const Scene &) = delete;
         
-        std::vector<Mesh>& getMeshes() { return meshes; };
+        std::vector<Mesh>& getMeshes() { return meshes; }
+
+        float getSceneScale() { return m_scene_scale; }
 
     private:
-        void load_obj(std::string scene);
+        void loadObj(std::string scene);
+        void updateSceneScale();
+
         std::vector<Mesh> meshes;
+
+        float m_scene_scale;
 };
 
 }

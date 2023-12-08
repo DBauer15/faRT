@@ -2,6 +2,7 @@
 #include "mesh.h"
 #include "scene.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
@@ -15,15 +16,16 @@ namespace fart {
 Scene::Scene(std::string scene) {
     std::string extension = scene.substr(scene.find_last_of(".") + 1);
     if (extension == "obj") {
-        load_obj(scene);
+        loadObj(scene);
     } else 
         throw std::runtime_error("Unexpected file format " + extension);
 
-   SUCC("Finished loading " + std::to_string(meshes.size()) + " meshes."); 
+    updateSceneScale();
+    SUCC("Finished loading " + std::to_string(meshes.size()) + " meshes."); 
 }
 
 void
-Scene::load_obj(std::string scene) {
+Scene::loadObj(std::string scene) {
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -96,6 +98,21 @@ Scene::load_obj(std::string scene) {
         m.geometries.push_back(g);
     }
     meshes.push_back(m);
+}
+
+void
+Scene::updateSceneScale() {
+    float min_vertex = 1e30f;
+    float max_vertex = -1e30f;
+
+    for (auto& mesh : meshes) {
+        for (auto& geometry : mesh.geometries) {
+            min_vertex = std::min(min_vertex, *std::min_element(geometry.vertices.begin(), geometry.vertices.end()));
+            max_vertex = std::max(max_vertex, *std::max_element(geometry.vertices.begin(), geometry.vertices.end()));
+        }
+    }
+
+    m_scene_scale = max_vertex - min_vertex;
 }
 
 }
