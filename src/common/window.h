@@ -35,6 +35,10 @@ struct Window {
         bool isMouseMiddlePressed() const { return m_mouse_middle_pressed; }
 
     private:
+        void windowSizeCallback(GLFWwindow* window, int width, int height) {
+            m_width = width;
+            m_height = height;
+        }
         void windowFocusCallback(GLFWwindow* window, int focus) {
             m_window_focused = focus != 0;
         }
@@ -52,8 +56,8 @@ struct Window {
 
         void initWindow();
         
-        const uint32_t m_width;
-        const uint32_t m_height;
+        uint32_t m_width;
+        uint32_t m_height;
 
         std::string m_window_title;
 

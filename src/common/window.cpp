@@ -24,11 +24,14 @@ Window::initWindow() {
 #else 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     m_window = glfwCreateWindow(m_width, m_height, m_window_title.c_str(), nullptr, nullptr);
 
     glfwSetWindowUserPointer(m_window, this);
+    glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
+        static_cast<Window*>(glfwGetWindowUserPointer(window))->windowSizeCallback(window, width, height);
+    });
     glfwSetWindowFocusCallback(m_window, [](GLFWwindow* window, int focus) {
         static_cast<Window*>(glfwGetWindowUserPointer(window))->windowFocusCallback(window, focus);
     });

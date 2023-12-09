@@ -114,7 +114,6 @@ OpenGlRenderer::initGl() {
 void
 OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 up) {
     m_shader->use();
-    //m_shader->setFloat4x4("u_vp", &vp[0][0]);
     auto viewport_size = m_window->getViewportSize();
     float aspect_ratio = (float)viewport_size.x / viewport_size.y;
     m_shader->setUInt2("u_viewport_size", glm::value_ptr(viewport_size));
@@ -128,8 +127,8 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
     m_indices->bind();
     m_bvh_buffer->bind();
 
+    glViewport(0, 0, viewport_size.x, viewport_size.y);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //glDrawElements(GL_TRIANGLES, m_indices->getNElements(), GL_UNSIGNED_INT, 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     m_vertex_array->unbind();
