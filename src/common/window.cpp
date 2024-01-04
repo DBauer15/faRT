@@ -13,6 +13,15 @@ Window::~Window() {
 }
 
 void
+Window::update() {
+    double xpos, ypos;
+    glfwGetCursorPos(m_window, &xpos, &ypos);
+    m_prev_mouse_position = m_mouse_position;
+    m_mouse_position.x = (xpos / m_width) * 2.f - 1.f;
+    m_mouse_position.y = (ypos / m_height) * -2.f + 1.f;
+}
+
+void
 Window::initWindow() {
     glfwInit();
 
@@ -24,7 +33,7 @@ Window::initWindow() {
 #else 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
-    //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     m_window = glfwCreateWindow(m_width, m_height, m_window_title.c_str(), nullptr, nullptr);
 
@@ -34,9 +43,6 @@ Window::initWindow() {
     });
     glfwSetWindowFocusCallback(m_window, [](GLFWwindow* window, int focus) {
         static_cast<Window*>(glfwGetWindowUserPointer(window))->windowFocusCallback(window, focus);
-    });
-    glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos) {
-        static_cast<Window*>(glfwGetWindowUserPointer(window))->cursorPositionCallback(window, xpos, ypos);
     });
     glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods) {
         static_cast<Window*>(glfwGetWindowUserPointer(window))->mouseButtonCallback(window, button, action, mods);

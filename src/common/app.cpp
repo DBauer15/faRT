@@ -1,7 +1,6 @@
 #include "app.h"
 #include "scene.h"
 #include <memory>
-#include <iostream>
 #include <string>
 
 namespace fart {
@@ -24,6 +23,10 @@ void
 App::run() {
 
     while(!m_window->shouldClose()) {
+        // update window
+        m_window->update();
+
+        // process input
         if (m_window->isWindowFocused()) {
             // camera update
             if (m_window->isMouseLeftPressed())
@@ -35,7 +38,9 @@ App::run() {
         }
 
         // render pass
-        m_renderer->render(m_camera->eye(), m_camera->dir(), m_camera->up());
+        RenderStats render_stats;
+        m_renderer->render(m_camera->eye(), m_camera->dir(), m_camera->up(), render_stats);
+        m_window->setWindowTitle("FaRT - " + m_renderer->name() + " @ " + std::to_string(1000 / render_stats.frame_time_ms) + " fps");
 
         glfwPollEvents();
     }

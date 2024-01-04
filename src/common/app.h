@@ -30,6 +30,7 @@ struct App {
         void run();
 
     private:
+        float fps_ema {0.f};
         
         std::unique_ptr<Camera> m_camera {nullptr};
         std::shared_ptr<Window> m_window {nullptr};

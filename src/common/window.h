@@ -17,19 +17,21 @@ struct Window {
         Window(const Window &) = delete;
         Window &operator=(const Window &) = delete;
 
-        bool shouldClose() { return glfwWindowShouldClose(m_window); }
+        void update();
+
         GLFWwindow* getGlfwWindow() { return m_window; }
+        void setWindowTitle(std::string window_title) { glfwSetWindowTitle(m_window, window_title.c_str()); }
 
         uint32_t getHeight() { return m_height; }
         uint32_t getWidth() { return m_width; }
         glm::u32vec2 getViewportSize() { return glm::u32vec2(m_width, m_height); }
 
-        bool isWindowFocused() const { return m_window_focused; }
-
         glm::vec2 getMousePosition() const { return m_mouse_position; }
         glm::vec2 getPrevMousePosition() const { return m_prev_mouse_position; }
         glm::vec2 getDeltaMousePosition() const { return m_mouse_position - m_prev_mouse_position; }
 
+        bool shouldClose() { return glfwWindowShouldClose(m_window); }
+        bool isWindowFocused() const { return m_window_focused; }
         bool isMouseLeftPressed() const { return m_mouse_left_pressed; }
         bool isMouseRightPressed() const { return m_mouse_right_pressed; }
         bool isMouseMiddlePressed() const { return m_mouse_middle_pressed; }
@@ -42,12 +44,6 @@ struct Window {
         void windowFocusCallback(GLFWwindow* window, int focus) {
             m_window_focused = focus != 0;
         }
-        void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos) {
-            m_prev_mouse_position = m_mouse_position;
-            m_mouse_position.x = (xpos / m_width) * 2.f - 1.f;
-            m_mouse_position.y = (ypos / m_height) * -2.f + 1.f;
-        }
-
         void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
             m_mouse_left_pressed = action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT;
             m_mouse_right_pressed = action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT;
