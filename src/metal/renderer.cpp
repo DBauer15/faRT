@@ -51,7 +51,7 @@ MetalRenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &wind
 }
 
 void
-MetalRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 up) {
+MetalRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 up, RenderStats& render_stats) {
     m_drawable = m_layer->nextDrawable();
     sendRenderCommand();
     m_drawable->release();

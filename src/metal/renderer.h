@@ -22,7 +22,7 @@ struct MetalRenderer : Renderer {
 
         virtual void init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &window) override; 
 
-        virtual void render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 up) override;
+        virtual void render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 up, RenderStats& render_stats) override;
 
         virtual std::string name() override {
             return "Metal Renderer";
