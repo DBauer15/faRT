@@ -1,4 +1,4 @@
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 #ifdef __APPLE__
 #include <OpenGL/glu.h>

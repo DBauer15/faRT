@@ -100,11 +100,12 @@ void
 OpenGlRenderer::initGl() {
     glfwMakeContextCurrent(m_window->getGlfwWindow());
     glfwSwapInterval(0);
-    glewExperimental = true;
-    GLenum status = glewInit();
-    if(status != GLEW_OK) {
-        ERR("Failed to initialize GLEW");
-    }
+    gladLoadGL();
+    //glewExperimental = true;
+    //GLenum status = glewInit();
+    //if(status != GLEW_OK) {
+        //ERR("Failed to initialize GLEW");
+    //}
 
     glClearColor(0.12f, 0.1f, 0.1f, 1.f);
     glViewport(0, 0, m_window->getWidth(), m_window->getHeight());

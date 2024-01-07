@@ -3,7 +3,6 @@ if (NOT BUILD_OPENGL_RENDERER)
 endif()
 
 find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
 
 add_library(renderer_opengl
     buffer.cpp
@@ -25,12 +24,11 @@ set_target_properties(renderer_opengl PROPERTIES
 target_include_directories(renderer_opengl PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>/..)
 
-
 target_link_libraries(renderer_opengl PUBLIC 
     glm::glm
     glfw
     OpenGL::OpenGL
-    GLEW::GLEW
+    glad
     )
 
 # Preprocess shader source and store in binary dir
