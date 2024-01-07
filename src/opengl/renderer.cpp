@@ -21,7 +21,7 @@ OpenGlRenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &win
 
 void
 OpenGlRenderer::initBVH() {
-    m_bvh = std::make_unique<BVH>(m_scene->getMeshes()[0].geometries[0].vertices, m_scene->getMeshes()[0].geometries[0].indices);
+    m_bvh = std::make_unique<BVH>(m_scene->getMeshes()[0].geometries);
 }
 
 void
@@ -31,28 +31,17 @@ OpenGlRenderer::initBuffers() {
     m_indices = std::make_unique<StorageBuffer>(1);
     m_bvh_buffer = std::make_unique<StorageBuffer>(2);
 
-    uint32_t index_offset = 0;
     std::vector<float> vertices;
-    std::vector<float> normals;
-    std::vector<uint32_t> indices;
-    for (auto& mesh : m_scene->getMeshes()) {
-        for (auto& geometry : mesh.geometries) {
-            for (size_t i = 0; i < geometry.vertices.size(); i++) {
-                vertices.emplace_back(geometry.vertices[i]);
-
-                // TODO this is to obay the 16-bit alignment of SSBOs and should be optimized
-                if (i % 3 == 2)
-                    vertices.emplace_back(0);
-            }
-            for (auto& idx : geometry.indices)
-                indices.emplace_back(idx+index_offset);
-
-            index_offset = vertices.size() / 3;
+    uint32_t n_inserted = 0;
+    for (auto& vertex : m_bvh->getVertices()) {
+        vertices.emplace_back(vertex);
+        if (++n_inserted % 3 == 0) {
+            vertices.emplace_back(0);
         }
     }
     
     m_vertices->setData(vertices);
-    m_indices->setData(indices);
+    m_indices->setData(m_bvh->getIndices());
     m_bvh_buffer->setData(m_bvh->getNodes());
 
     std::vector<float> quad {

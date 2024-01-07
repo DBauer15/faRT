@@ -1,11 +1,36 @@
 #include "bvh.h"
 
 #include "common/defs.h"
+#include <algorithm>
 #include <string>
 
 namespace fart {
 
+BVH::BVH(std::vector<Geometry>& geometries) {
+    size_t index_offset = 0;
+    for (auto& geometry : geometries) {
+        m_vertices.reserve(m_vertices.size() + geometry.vertices.size());
+        m_vertices.insert(m_vertices.end(), geometry.vertices.begin(), geometry.vertices.end());
+        m_indices.reserve(m_indices.size() + geometry.indices.size());
+        m_indices.insert(m_indices.end(), geometry.indices.begin(), geometry.indices.end());
+
+        std::transform(m_indices.end() - geometry.indices.size(), m_indices.end(), m_indices.end() - geometry.indices.size(), [&](uint32_t index) {
+                return index + index_offset;
+        });
+        index_offset += geometry.vertices.size() / 3;
+    }
+
+    build(m_vertices, m_indices);
+}
+
 BVH::BVH(std::vector<float>& vertices, std::vector<uint32_t>& indices) {
+    m_vertices = vertices;
+    m_indices = indices;
+    build(m_vertices, m_indices);
+}
+
+void
+BVH::build(std::vector<float>& vertices, std::vector<uint32_t>& indices) {
         
     size_t N = indices.size() / 3;
     m_nodes_used = 1;
