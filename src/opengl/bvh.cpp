@@ -28,6 +28,8 @@ BVH::BVH(std::vector<float>& vertices, std::vector<uint32_t>& indices) {
 
     updateNodeBounds( root_idx, vertices, indices );
     subdivide( root_idx, vertices, indices );
+
+    SUCC("Built BVH over " + std::to_string(N) + " triangles");
 }
 
 void
