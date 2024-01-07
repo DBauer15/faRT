@@ -12,12 +12,13 @@ namespace fart {
 struct OpenGlRenderer : Renderer {
     public:
         void init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &window) override;
-        void render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 up) override;
+        void render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 up, RenderStats& render_stats) override;
         virtual std::string name() override {
             return "OpenGL Renderer";
         }
 
     private:
+        uint32_t m_frame_no { 0 };
         std::shared_ptr<Scene> m_scene;
         std::shared_ptr<Window> m_window;
         std::shared_ptr<BVH> m_bvh;

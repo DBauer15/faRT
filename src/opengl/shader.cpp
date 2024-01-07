@@ -1,8 +1,8 @@
 #include "shader.h"
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <vector>
-#include <stdexcept>
 
 
 namespace fart {
@@ -37,6 +37,18 @@ Shader::loadShaderProgram(std::string vert_binary_path, std::string frag_binary_
 
     if (!status) {
         ERR("Failed to link shader program.");
+        GLint maxLength = 0;
+        glGetShaderiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+
+        // The maxLength includes the NULL character
+        std::vector<GLchar> errorLog(maxLength);
+        glGetShaderInfoLog(program, maxLength, &maxLength, &errorLog[0]);
+
+        ERR(&errorLog[0]);
+
+        // Provide the infolog in whatever manor you deem best.
+        // Exit with failure.
+        glDeleteProgram(program); // Don't leak the shader.
         return 0;
     }
 
@@ -74,12 +86,7 @@ Shader::loadShaderStage(std::string binary_path, GLenum stage) {
     // GLSL Compile
     GLuint shader = glCreateShader(stage);
 
-    std::ifstream shader_stream(binary_path);
-    std::stringstream shader_sstream;
-    shader_sstream << shader_stream.rdbuf();
-    shader_stream.close();
-
-    std::string shader_code = shader_sstream.str();
+    std::string shader_code = loadShaderSource(binary_path);
     const char* shader_code_ptr = shader_code.c_str();
 
     // Compile shader
@@ -110,6 +117,18 @@ Shader::loadShaderStage(std::string binary_path, GLenum stage) {
     SUCC("Loaded shader " + binary_path);
 
     return shader;
+}
+
+std::string
+Shader::loadShaderSource(std::string binary_path) {
+    std::ifstream shader_stream(binary_path);
+    std::stringstream shader_sstream;
+    shader_sstream << shader_stream.rdbuf();
+    shader_stream.close();
+
+    std::string shader_code = shader_sstream.str();
+
+    return shader_code;
 }
 
 }

@@ -33,15 +33,23 @@ target_link_libraries(renderer_opengl PUBLIC
     GLEW::GLEW
     )
 
-# Compile and copy SPIR-V shaders
-#add_custom_command(TARGET renderer_opengl POST_BUILD
-    #MAIN_DEPENDENCY triangle.vert.glsl
-    #COMMAND glslc -fshader-stage=vert ${CMAKE_CURRENT_LIST_DIR}/triangle.vert.glsl -o ${PROJECT_BINARY_DIR}/triangle.vert.spv)
+# Preprocess shader source and store in binary dir
+file(GLOB_RECURSE SHADER_SOURCES ${CMAKE_CURRENT_LIST_DIR}/glsl/*.glsl)
 
-#add_custom_command(TARGET renderer_opengl POST_BUILD
-    #MAIN_DEPENDENCY triangle.frag.glsl
-    #COMMAND glslc -fshader-stage=frag ${CMAKE_CURRENT_LIST_DIR}/triangle.frag.glsl -o ${PROJECT_BINARY_DIR}/triangle.frag.spv)
+add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/pathtracer.vert.glsl 
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.vert.glsl
+    DEPENDS ${SHADER_SOURCES}
+    COMMAND glslang ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.vert.glsl -E > ${PROJECT_BINARY_DIR}/pathtracer.vert.glsl)
 
-# Copy GLSL shader source
-file(GLOB SHADER_SOURCES ${CMAKE_CURRENT_LIST_DIR}/*.glsl)
-file(COPY ${SHADER_SOURCES} DESTINATION ${PROJECT_BINARY_DIR})
+add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/pathtracer.frag.glsl 
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.frag.glsl
+    DEPENDS ${SHADER_SOURCES}
+    COMMAND glslang ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.frag.glsl -E > ${PROJECT_BINARY_DIR}/pathtracer.frag.glsl)
+
+add_custom_target(renderer_opengl_shaders ALL 
+    DEPENDS 
+    ${PROJECT_BINARY_DIR}/pathtracer.frag.glsl 
+    ${PROJECT_BINARY_DIR}/pathtracer.vert.glsl
+    )

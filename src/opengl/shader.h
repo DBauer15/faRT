@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-
 #include "gldefs.h"
 #include "common/defs.h"
 
@@ -45,7 +44,7 @@ struct Shader {
 
         GLuint loadShaderProgram(std::string vert_binary_path, std::string frag_binary_path);
         GLuint loadShaderStage(std::string binary_path, GLenum stage);
-
+        std::string loadShaderSource(std::string binary_path);
 };
 
 }
