@@ -4,16 +4,19 @@ Hobby project that implements real-time path tracing for various backends to fac
 ## Building FaRT
 The project can be built via CMake. Dependencies are included in the repository as submodules. Make sure they are correctly checked out.
 If you have not cloned the repository yet run:
+
 ``bash
 git clone --recursive git@github.com:DBauer15/FaRT.git
 ``
 
 Alternatively, on a local copy run:
+
 ``bash
 git submodules update --init --recursive
 ``
 
 To build the application run:
+
 ``bash
 cmake -B build -D[RENDERER] .
 cmake --build build -j
@@ -26,11 +29,13 @@ FaRT supports various rendering backends which can be built by setting correspon
 Currently, only a single backend is supported at a time. To build a backend, pass the approriate flag.
 
 **OpenGL (Windows, Linux)**
+
 ``bash
 cmake -B build -DBUILD_OPENGL_RENDERER=ON
 ``
 
 **Metal (Apple)**
+
 ``bash
 cmake -B build -DBUILD_METAL_RENDERER=ON 
 ``
