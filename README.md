@@ -5,22 +5,22 @@ Hobby project that implements real-time path tracing for various backends to fac
 The project can be built via CMake. Dependencies are included in the repository as submodules. Make sure they are correctly checked out.
 If you have not cloned the repository yet run:
 
-``bash
+```bash
 git clone --recursive git@github.com:DBauer15/FaRT.git
-``
+```
 
 Alternatively, on a local copy run:
 
-``bash
+```bash
 git submodules update --init --recursive
-``
+```
 
 To build the application run:
 
-``bash
+```bash
 cmake -B build -D[RENDERER] .
 cmake --build build -j
-``
+```
 
 Where ``[RENDERER]`` is one of the supported rendering backends (see below).
 
@@ -30,23 +30,23 @@ Currently, only a single backend is supported at a time. To build a backend, pas
 
 **OpenGL (Windows, Linux)**
 
-``bash
+```bash
 cmake -B build -DBUILD_OPENGL_RENDERER=ON
-``
+```
 
 **Metal (Apple)**
 
-``bash
+```bash
 cmake -B build -DBUILD_METAL_RENDERER=ON 
-``
+```
 
 ## Running FaRT
 The app can be started by calling the compiled binary with the desired scene as an argument.
 
-``bash
+```bash
 cd build 
 ./fart [SCENE_FILE]
-``
+```
 
 Where `[SCENE_FILE]` is a 3D file of any of the supported formats (see "Supported 3D Formats" for details).
 
@@ -60,8 +60,8 @@ The renderer implements a simple arcball camera model. The camera can be control
 ## Supported 3D Formats
 Here is an ever evolving list of supported file format.
 
-[X] Wavefront OBJ
-[ ] Autodesk FBX
-[ ] Stanford PLY
-[ ] GL Transmission Format glTF
-[ ] Pixar Universal Scene Descriptor USD
+- [X] Wavefront OBJ
+- [ ] Autodesk FBX
+- [ ] Stanford PLY
+- [ ] GL Transmission Format glTF
+- [ ] Pixar Universal Scene Descriptor USD
