@@ -13,7 +13,7 @@ endif()
 
 # Compile options
 option(BUILD_OPENGL_RENDERER "Build the OpenGL renderer." OFF)
-option(BUILD_METAL_RENDERER "Build the Metal renderer." ON)
+option(BUILD_METAL_RENDERER "Build the Metal renderer." OFF)
 
 # Write all binaries directly to the build directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
