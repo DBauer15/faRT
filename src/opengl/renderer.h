@@ -2,8 +2,10 @@
 
 #include "buffer.h"
 #include "bvh.h"
+#include "framebuffer.h"
 #include "vertex_array.h"
 #include "shader.h"
+#include "texture.h"
 #include "common/renderer.h"
 #include "common/window.h"
 
@@ -30,13 +32,20 @@ struct OpenGlRenderer : Renderer {
         std::unique_ptr<StorageBuffer> m_indices;
 
         std::unique_ptr<VertexArray> m_vertex_array;
-        std::unique_ptr<Shader> m_shader;
+        std::unique_ptr<Shader> m_shader_pathtracer;
+        std::unique_ptr<Shader> m_shader_accumulator;
+
+        std::unique_ptr<FrameBuffer> m_framebuffer;
+        std::unique_ptr<Texture> m_single_pass_texture;
+        std::unique_ptr<Texture> m_accum_texture;
 
         void initBVH();
+        void initFrameBuffer();
         void initBuffers();
         void initShaders();
         void initBindings();
         void initGl();
+        void blit();
 };
 
 }

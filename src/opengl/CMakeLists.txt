@@ -9,10 +9,14 @@ add_library(renderer_opengl
     buffer.h
     bvh.cpp
     bvh.h
+    framebuffer.cpp
+    framebuffer.h
     renderer.cpp
     renderer.h
     shader.cpp
     shader.h
+    texture.cpp
+    texture.h
     vertex_array.cpp
     vertex_array.h
     )
@@ -46,8 +50,22 @@ add_custom_command(
     DEPENDS ${SHADER_SOURCES}
     COMMAND glslang ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.frag.glsl -E > ${PROJECT_BINARY_DIR}/pathtracer.frag.glsl)
 
+add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/accum.vert.glsl 
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/glsl/accum.vert.glsl
+    DEPENDS ${SHADER_SOURCES}
+    COMMAND glslang ${CMAKE_CURRENT_LIST_DIR}/glsl/accum.vert.glsl -E > ${PROJECT_BINARY_DIR}/accum.vert.glsl)
+
+add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/accum.frag.glsl 
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/glsl/accum.frag.glsl
+    DEPENDS ${SHADER_SOURCES}
+    COMMAND glslang ${CMAKE_CURRENT_LIST_DIR}/glsl/accum.frag.glsl -E > ${PROJECT_BINARY_DIR}/accum.frag.glsl)
+
 add_custom_target(renderer_opengl_shaders ALL 
     DEPENDS 
     ${PROJECT_BINARY_DIR}/pathtracer.frag.glsl 
     ${PROJECT_BINARY_DIR}/pathtracer.vert.glsl
+    ${PROJECT_BINARY_DIR}/accum.frag.glsl 
+    ${PROJECT_BINARY_DIR}/accum.vert.glsl
     )
