@@ -7,8 +7,7 @@
 #include "common/intersect.glsl"
 
 uniform sampler2D u_frag_color_accum;
-layout(location = 0) out vec4 frag_color;
-layout(location = 1) out vec4 frag_color_accum;
+out vec4 frag_color;
 
 float light_probe(Ray ray) {
     SurfaceInteraction si = intersect(ray);
@@ -66,8 +65,5 @@ void main() {
     else
         L = miss(ray);
 
-    //frag_color = vec4(L.rgb, 1.f / (u_frame_no + 1));
-    //frag_color = (u_frame_no * texture(u_frag_color_accum, uv) + L) / (u_frame_no + 1);
-    frag_color = texture(u_frag_color_accum, uv);
-    frag_color_accum = vec4(1,0,0,1);
+    frag_color = (u_frame_no * texture(u_frag_color_accum, uv) + L) / (u_frame_no + 1.f);
 }

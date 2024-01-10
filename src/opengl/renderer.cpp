@@ -27,15 +27,19 @@ OpenGlRenderer::initBVH() {
 
 void
 OpenGlRenderer::initFrameBuffer() {
-    m_framebuffer = std::make_unique<FrameBuffer>();
-    m_single_pass_texture = std::make_unique<Texture>(m_window->getWidth(), m_window->getHeight());
-    m_accum_texture = std::make_unique<Texture>(m_window->getWidth(), m_window->getHeight());
+    m_framebuffer0 = std::make_unique<FrameBuffer>();
+    m_framebuffer1 = std::make_unique<FrameBuffer>();
+    m_accum_texture0 = std::make_unique<Texture>(m_window->getWidth(), m_window->getHeight());
+    m_accum_texture1 = std::make_unique<Texture>(m_window->getWidth(), m_window->getHeight());
 
-    m_framebuffer->addAttachment(*m_single_pass_texture, GL_COLOR_ATTACHMENT0);
-    m_framebuffer->addAttachment(*m_accum_texture, GL_COLOR_ATTACHMENT1);
+    m_framebuffer0->addAttachment(*m_accum_texture0, GL_COLOR_ATTACHMENT0);
+    m_framebuffer1->addAttachment(*m_accum_texture1, GL_COLOR_ATTACHMENT0);
 
-    if (!m_framebuffer->isComplete()) {
-        ERR("Framebuffer was not built correctly.");
+    if (!m_framebuffer0->isComplete()) {
+        ERR("Framebuffer 0 was not built correctly.");
+    }
+    if (!m_framebuffer1->isComplete()) {
+        ERR("Framebuffer 1 was not built correctly.");
     }
 }
 
@@ -78,10 +82,6 @@ OpenGlRenderer::initShaders() {
             "pathtracer.vert.glsl", 
             "pathtracer.frag.glsl"
             );
-    m_shader_accumulator = std::make_unique<Shader>(
-            "accum.vert.glsl",
-            "accum.frag.glsl"
-            );
 }
 
 void
@@ -117,10 +117,23 @@ void
 OpenGlRenderer::blit() {
     auto viewport_size = m_window->getViewportSize();
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_framebuffer->getFrameBuffer());
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_framebuffer0->getFrameBuffer());
     glBlitFramebuffer(0, 0, viewport_size.x, viewport_size.y, 
                       0, 0, viewport_size.x, viewport_size.y,
                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
+}
+
+bool
+OpenGlRenderer::shouldClear(const glm::vec3& eye, const glm::vec3& dir, const glm::vec3& up) {
+    bool clear = glm::any(glm::epsilonNotEqual(eye, m_prev_eye, 0.00001f)) |
+                 glm::any(glm::epsilonNotEqual(dir, m_prev_dir, 0.00001f)) |
+                 glm::any(glm::epsilonNotEqual(up, m_prev_up, 0.00001f));
+
+    m_prev_eye = eye;
+    m_prev_dir = dir;
+    m_prev_up = up;
+
+    return clear;
 }
 
 void
@@ -128,11 +141,18 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
     auto t_start = std::chrono::high_resolution_clock::now();
     auto viewport_size = m_window->getViewportSize();
     float aspect_ratio = (float)viewport_size.x / viewport_size.y;
+    glViewport(0, 0, viewport_size.x, viewport_size.y);
 
-    m_single_pass_texture->resize(viewport_size.x, viewport_size.y);
-    m_accum_texture->resize(viewport_size.x, viewport_size.y);
+    m_accum_texture0->resize(viewport_size.x, viewport_size.y);
+    m_accum_texture1->resize(viewport_size.x, viewport_size.y);
 
-    m_framebuffer->bind();
+    if (shouldClear(eye, dir, up)) {
+        m_frame_no = 0;
+        m_accum_texture0->clear();
+        m_accum_texture1->clear();
+    }
+
+    m_framebuffer0->bind();
     m_shader_pathtracer->use();
     m_shader_pathtracer->setUInt("u_frame_no", &m_frame_no);
     m_shader_pathtracer->setUInt2("u_viewport_size", glm::value_ptr(viewport_size));
@@ -140,24 +160,29 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
     m_shader_pathtracer->setFloat3("u_camera.eye", glm::value_ptr(eye));
     m_shader_pathtracer->setFloat3("u_camera.dir", glm::value_ptr(dir));
     m_shader_pathtracer->setFloat3("u_camera.up", glm::value_ptr(up));
+    m_shader_pathtracer->setUInt("u_frag_color_accum", 0);
+    m_accum_texture1->activate(GL_TEXTURE0);
+    m_accum_texture1->bind();
 
     m_vertex_array->bind();
     m_vertices->bind();
     m_indices->bind();
     m_bvh_buffer->bind();
 
-    glViewport(0, 0, viewport_size.x, viewport_size.y);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
+    m_bvh_buffer->unbind();
     m_vertex_array->unbind();
     m_vertices->unbind();
     m_indices->unbind();
-    m_bvh_buffer->unbind();
+    m_accum_texture1->unbind();
     m_shader_pathtracer->unuse();
-    m_framebuffer->unbind();
+    m_framebuffer0->unbind();
 
     blit();
     glfwSwapBuffers(m_window->getGlfwWindow());
+    m_framebuffer0.swap(m_framebuffer1);
+    m_accum_texture0.swap(m_accum_texture1);
 
     auto frame_time_mus = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t_start);
     render_stats.frame_time_ms = frame_time_mus.count() * 0.001f;

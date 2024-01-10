@@ -42,30 +42,16 @@ add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/pathtracer.vert.glsl 
     MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.vert.glsl
     DEPENDS ${SHADER_SOURCES}
-    COMMAND glslang ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.vert.glsl -E > ${PROJECT_BINARY_DIR}/pathtracer.vert.glsl)
+    COMMAND glslangValidator ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.vert.glsl -E > ${PROJECT_BINARY_DIR}/pathtracer.vert.glsl)
 
 add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/pathtracer.frag.glsl 
     MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.frag.glsl
     DEPENDS ${SHADER_SOURCES}
-    COMMAND glslang ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.frag.glsl -E > ${PROJECT_BINARY_DIR}/pathtracer.frag.glsl)
-
-add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/accum.vert.glsl 
-    MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/glsl/accum.vert.glsl
-    DEPENDS ${SHADER_SOURCES}
-    COMMAND glslang ${CMAKE_CURRENT_LIST_DIR}/glsl/accum.vert.glsl -E > ${PROJECT_BINARY_DIR}/accum.vert.glsl)
-
-add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/accum.frag.glsl 
-    MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/glsl/accum.frag.glsl
-    DEPENDS ${SHADER_SOURCES}
-    COMMAND glslang ${CMAKE_CURRENT_LIST_DIR}/glsl/accum.frag.glsl -E > ${PROJECT_BINARY_DIR}/accum.frag.glsl)
+    COMMAND glslangValidator ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.frag.glsl -E > ${PROJECT_BINARY_DIR}/pathtracer.frag.glsl)
 
 add_custom_target(renderer_opengl_shaders ALL 
     DEPENDS 
     ${PROJECT_BINARY_DIR}/pathtracer.frag.glsl 
     ${PROJECT_BINARY_DIR}/pathtracer.vert.glsl
-    ${PROJECT_BINARY_DIR}/accum.frag.glsl 
-    ${PROJECT_BINARY_DIR}/accum.vert.glsl
     )

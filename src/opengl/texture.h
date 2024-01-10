@@ -10,16 +10,17 @@ struct Texture {
     public:
         Texture(const uint32_t width, 
                 const uint32_t height,
-                GLenum internal_format = GL_RGBA,
+                GLenum internal_format = GL_RGBA32F,
                 GLenum src_format = GL_RGBA,
                 GLenum src_type = GL_UNSIGNED_BYTE);
         ~Texture();
 
-        void setData(char* data);
+        void setData(char* data, GLenum min_filter, GLenum mag_filter);
         void resize(uint32_t width, uint32_t height);
         void clear();
 
         GLuint& getTexture() { return m_texture; }
+        void activate(GLenum texture_unit);
         void bind();
         void unbind();
 

@@ -21,6 +21,8 @@ struct OpenGlRenderer : Renderer {
 
     private:
         uint32_t m_frame_no { 0 };
+        glm::vec3 m_prev_eye, m_prev_dir, m_prev_up;
+
         std::shared_ptr<Scene> m_scene;
         std::shared_ptr<Window> m_window;
         std::shared_ptr<BVH> m_bvh;
@@ -33,11 +35,11 @@ struct OpenGlRenderer : Renderer {
 
         std::unique_ptr<VertexArray> m_vertex_array;
         std::unique_ptr<Shader> m_shader_pathtracer;
-        std::unique_ptr<Shader> m_shader_accumulator;
 
-        std::unique_ptr<FrameBuffer> m_framebuffer;
-        std::unique_ptr<Texture> m_single_pass_texture;
-        std::unique_ptr<Texture> m_accum_texture;
+        std::unique_ptr<FrameBuffer> m_framebuffer0;
+        std::unique_ptr<FrameBuffer> m_framebuffer1;
+        std::unique_ptr<Texture> m_accum_texture0;
+        std::unique_ptr<Texture> m_accum_texture1;
 
         void initBVH();
         void initFrameBuffer();
@@ -46,6 +48,7 @@ struct OpenGlRenderer : Renderer {
         void initBindings();
         void initGl();
         void blit();
+        bool shouldClear(const glm::vec3& eye, const glm::vec3& dir, const glm::vec3& up);
 };
 
 }

@@ -20,12 +20,17 @@ Texture::~Texture() {
 }
 
 void
-Texture::setData(char* data) {
+Texture::setData(char* data,
+                 GLenum min_filter = GL_NEAREST,
+                 GLenum mag_filter = GL_NEAREST) {
     bind();
     glTexImage2D(GL_TEXTURE_2D, 
                  0, m_internal_format,
                  m_width, m_height,
                  0, m_src_format, m_src_type, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
+    glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
     unbind();
 }
 
@@ -43,6 +48,11 @@ Texture::resize(uint32_t width, uint32_t height) {
 void
 Texture::clear() {
     setData(nullptr);
+}
+
+void
+Texture::activate(GLenum texture_unit) {
+    glActiveTexture(texture_unit);
 }
 
 void
