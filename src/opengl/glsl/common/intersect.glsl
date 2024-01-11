@@ -76,7 +76,7 @@ SurfaceInteraction intersect(Ray ray) {
     } while(current >= 0 && current < 64);
 
     si.p = ray.o + ray.d * ray.t;
-    si.w_o = ray.d;
+    si.w_o = -ray.d;
     
     return si;
 }
