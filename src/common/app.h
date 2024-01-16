@@ -21,8 +21,8 @@ namespace fart {
 struct App {
     
     public:
-        static constexpr uint32_t WIDTH = 1280;
-        static constexpr uint32_t HEIGHT = 720;
+        static constexpr uint32_t WIDTH = 1920;
+        static constexpr uint32_t HEIGHT = 1080;
 
         App(std::string scene);
         ~App() = default;

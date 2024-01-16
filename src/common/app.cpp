@@ -41,8 +41,12 @@ App::run() {
         RenderStats render_stats;
         m_renderer->render(m_camera->eye(), m_camera->dir(), m_camera->up(), render_stats);
         if (m_fps_ema < 0.f) m_fps_ema = (1000.f / render_stats.frame_time_ms); 
-        m_fps_ema = 0.01f * (1000.f / render_stats.frame_time_ms) + 0.99f * m_fps_ema;
-        if (m_frame_count % 100 == 0) m_window->setWindowTitle("FaRT - " + m_renderer->name() + " @ " + std::to_string(int(std::floorf(m_fps_ema))) + " fps");
+        m_fps_ema = 0.05f * (1000.f / render_stats.frame_time_ms) + 0.95f * m_fps_ema;
+        //if (m_frame_count % 100 == 0) m_window->setWindowTitle("FaRT - " + m_renderer->name() + " @ " + std::to_string(m_fps_ema) + " fps");
+        if (m_fps_ema / ( m_frame_count + 1 ) < 5.f) {
+            m_window->setWindowTitle("FaRT - " + m_renderer->name() + " @ " + std::to_string(int(m_fps_ema)) + " fps");
+            m_frame_count = 0;
+        }
 
         glfwPollEvents();
 
