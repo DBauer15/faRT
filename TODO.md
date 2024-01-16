@@ -5,6 +5,7 @@
 
 ## GLSL
 - [X] Add accumulation buffer.
+- [ ] Fix RNG and implement low-discrepancy sequence samplers
 - [ ] Implement SAH as BVH split function.
 - [ ] Fix BVH memory consumption. BVH copies vertex/index data from Scene.
 - [ ] Flatten BVH as DFS for (potentially) better cache coherence.
