@@ -93,6 +93,6 @@ void main() {
     else
         L = miss(ray);
 
-    L = gamma(tonemap_Exposure(L, 1.f));
+    L = gamma(tonemap_Reinhard(L));
     frag_color = (u_frame_no * texture(u_frag_color_accum, uv) + L) / (u_frame_no + 1.f);
 }
