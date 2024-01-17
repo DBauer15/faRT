@@ -21,8 +21,10 @@ bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_in
     if (t > EPS) {
         // update ray and SurfaceInteraction
         // TODO: This could be moved to somewhere nicer with less divergence
-        if (t < ray.t)
+        if (t < ray.t) {
             si.n = normalize(cross(edge1, edge2));
+            si.n = si.n * sign(dot(si.n, -ray.d));
+        }
         ray.t = min( ray.t, t );
         si.valid = true;
         return true;
