@@ -33,8 +33,10 @@ struct OpenGlRenderer : Renderer {
         std::unique_ptr<StorageBuffer> m_vertices;
         std::unique_ptr<StorageBuffer> m_indices;
 
-        std::unique_ptr<VertexArray> m_vertex_array;
+        std::unique_ptr<VertexArray> m_vertex_array_pathtracer;
         std::unique_ptr<Shader> m_shader_pathtracer;
+        std::unique_ptr<VertexArray> m_vertex_array_postprocess;
+        std::unique_ptr<Shader> m_shader_postprocess;
 
         std::unique_ptr<FrameBuffer> m_framebuffer0;
         std::unique_ptr<FrameBuffer> m_framebuffer1;
@@ -47,7 +49,6 @@ struct OpenGlRenderer : Renderer {
         void initShaders();
         void initBindings();
         void initGl();
-        void blit();
         bool shouldClear(const glm::vec3& eye, const glm::vec3& dir, const glm::vec3& up);
 };
 

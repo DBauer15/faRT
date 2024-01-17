@@ -82,26 +82,42 @@ OpenGlRenderer::initShaders() {
             "pathtracer.vert.glsl", 
             "pathtracer.frag.glsl"
             );
+
+    m_shader_postprocess = std::make_unique<Shader>(
+            "postprocess.vert.glsl", 
+            "postprocess.frag.glsl"
+            );
 }
 
 void
 OpenGlRenderer::initBindings() {
-    m_vertex_array = std::make_unique<VertexArray>();
-    m_vertex_array->bind();
+    m_vertex_array_pathtracer = std::make_unique<VertexArray>();
+    m_vertex_array_pathtracer->bind();
     m_quad->bind();
     m_vertices->bind();
     m_indices->bind();
     m_bvh_buffer->bind();
-    m_vertex_array->addVertexAttribute(/*shader=*/*m_shader_pathtracer.get(), 
+    m_vertex_array_pathtracer->addVertexAttribute(/*shader=*/*m_shader_pathtracer.get(), 
                                        /*attribute_name=*/"a_position", 
                                        /*size=*/3, 
                                        /*dtype=*/GL_FLOAT, 
                                        /*stride=*/3 * sizeof(float));
-    m_vertex_array->unbind();
+    m_vertex_array_pathtracer->unbind();
     m_quad->unbind();
     m_vertices->unbind();
     m_indices->unbind();
     m_bvh_buffer->unbind();
+
+    m_vertex_array_postprocess = std::make_unique<VertexArray>();
+    m_vertex_array_postprocess->bind();
+    m_quad->bind();
+    m_vertex_array_postprocess->addVertexAttribute(/*shader=*/*m_shader_postprocess.get(), 
+                                       /*attribute_name=*/"a_position", 
+                                       /*size=*/3, 
+                                       /*dtype=*/GL_FLOAT, 
+                                       /*stride=*/3 * sizeof(float));
+    m_vertex_array_postprocess->unbind();
+    m_quad->unbind();
 }
 
 void
@@ -111,16 +127,6 @@ OpenGlRenderer::initGl() {
     gladLoadGL();
 
     glViewport(0, 0, m_window->getWidth(), m_window->getHeight());
-}
-
-void
-OpenGlRenderer::blit() {
-    auto viewport_size = m_window->getViewportSize();
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_framebuffer0->getFrameBuffer());
-    glBlitFramebuffer(0, 0, viewport_size.x, viewport_size.y, 
-                      0, 0, viewport_size.x, viewport_size.y,
-                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
 }
 
 bool
@@ -152,34 +158,42 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
         m_accum_texture1->clear();
     }
 
-    m_framebuffer0->bind();
-    m_shader_pathtracer->use();
-    m_shader_pathtracer->setUInt("u_frame_no", &m_frame_no);
-    m_shader_pathtracer->setUInt2("u_viewport_size", glm::value_ptr(viewport_size));
-    m_shader_pathtracer->setFloat("u_aspect_ratio", &aspect_ratio);
-    m_shader_pathtracer->setFloat3("u_camera.eye", glm::value_ptr(eye));
-    m_shader_pathtracer->setFloat3("u_camera.dir", glm::value_ptr(dir));
-    m_shader_pathtracer->setFloat3("u_camera.up", glm::value_ptr(up));
-    m_shader_pathtracer->setUInt("u_frag_color_accum", 0);
-    m_accum_texture1->activate(GL_TEXTURE0);
-    m_accum_texture1->bind();
 
-    m_vertex_array->bind();
-    m_vertices->bind();
-    m_indices->bind();
-    m_bvh_buffer->bind();
+    { // Pathtracing renderpass
+        m_framebuffer0->bind();
+        m_shader_pathtracer->use();
+        m_shader_pathtracer->setUInt("u_frame_no", &m_frame_no);
+        m_shader_pathtracer->setUInt2("u_viewport_size", glm::value_ptr(viewport_size));
+        m_shader_pathtracer->setFloat("u_aspect_ratio", &aspect_ratio);
+        m_shader_pathtracer->setFloat3("u_camera.eye", glm::value_ptr(eye));
+        m_shader_pathtracer->setFloat3("u_camera.dir", glm::value_ptr(dir));
+        m_shader_pathtracer->setFloat3("u_camera.up", glm::value_ptr(up));
+        m_accum_texture1->activate(GL_TEXTURE0);
+        m_accum_texture1->bind();
+        m_shader_pathtracer->setUInt("u_frag_color_accum", 0);
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+        m_vertex_array_pathtracer->bind();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        m_vertex_array_pathtracer->unbind();
 
-    m_bvh_buffer->unbind();
-    m_vertex_array->unbind();
-    m_vertices->unbind();
-    m_indices->unbind();
-    m_accum_texture1->unbind();
-    m_shader_pathtracer->unuse();
-    m_framebuffer0->unbind();
+        m_accum_texture1->unbind();
+        m_shader_pathtracer->unuse();
+        m_framebuffer0->unbind();
+    }
 
-    blit();
+    { // Postprocessing renderpass
+        m_shader_postprocess->use();
+        m_accum_texture0->activate(GL_TEXTURE0);
+        m_accum_texture0->bind();
+        m_shader_postprocess->setUInt("u_frag_color_accum", 0);
+
+        m_vertex_array_postprocess->bind();
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        m_vertex_array_postprocess->unbind();
+
+        m_shader_postprocess->unuse();
+    }
+
     glfwSwapBuffers(m_window->getGlfwWindow());
     m_framebuffer0.swap(m_framebuffer1);
     m_accum_texture0.swap(m_accum_texture1);

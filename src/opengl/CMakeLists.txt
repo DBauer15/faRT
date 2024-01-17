@@ -50,8 +50,22 @@ add_custom_command(
     DEPENDS ${SHADER_SOURCES}
     COMMAND glslangValidator ${CMAKE_CURRENT_LIST_DIR}/glsl/pathtracer.frag.glsl -E > ${PROJECT_BINARY_DIR}/pathtracer.frag.glsl)
 
+add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/postprocess.vert.glsl 
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/glsl/postprocess.vert.glsl
+    DEPENDS ${SHADER_SOURCES}
+    COMMAND glslangValidator ${CMAKE_CURRENT_LIST_DIR}/glsl/postprocess.vert.glsl -E > ${PROJECT_BINARY_DIR}/postprocess.vert.glsl)
+
+add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/postprocess.frag.glsl 
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_LIST_DIR}/glsl/postprocess.frag.glsl
+    DEPENDS ${SHADER_SOURCES}
+    COMMAND glslangValidator ${CMAKE_CURRENT_LIST_DIR}/glsl/postprocess.frag.glsl -E > ${PROJECT_BINARY_DIR}/postprocess.frag.glsl)
+
 add_custom_target(renderer_opengl_shaders ALL 
     DEPENDS 
     ${PROJECT_BINARY_DIR}/pathtracer.frag.glsl 
     ${PROJECT_BINARY_DIR}/pathtracer.vert.glsl
+    ${PROJECT_BINARY_DIR}/postprocess.frag.glsl 
+    ${PROJECT_BINARY_DIR}/postprocess.vert.glsl
     )
