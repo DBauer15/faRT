@@ -1,4 +1,9 @@
-#define PI 3.14159265359
+#define PI 3.14159265358979323846
+#define ONE_OVER_PI 0.31830988618379067154
+#define ONE_OVER_TWO_PI 0.15915494309189533577
+#define ONE_OVER_FOUR_PI 0.07957747154594766788
+#define PI_OVER_TWO 1.57079632679489661923
+#define PI_OVER_FOUR 0.78539816339744830961
 
 /*
  * From: Hash Functions for GPU Rendering
@@ -30,23 +35,40 @@ float random(vec2 xy, float z) {
     return random3(vec3(xy, z)).x;
 }
 
-/**
- * Generate a uniformly distributed random point on the unit disk towards the normal
- * 
- * Reference:
- * http://mathworld.wolfram.com/DiskPointPicking.html
+/* 
+ * Reorients a vector around a normal
+ *
  */
-vec3 randomDiskPoint(vec3 rand, vec3 n) {
-    float r = rand.x;
-    float angle = rand.y * 2.0 * PI;
-    float sr = sqrt(r);
-    vec2 p = vec2(sr * cos(angle), sr * sin(angle));
-    vec3 tangent = normalize(rand);
-    vec3 bitangent = cross(tangent, n);
-    tangent = cross(bitangent, n);
+vec3 reorient(vec3 dir, vec3 normal) {
+    vec3 tangent = cross(dir, normal);
+    vec3 bitangent = cross(tangent, normal);
+    tangent = cross(bitangent, normal);
 
     // Orient towards normal
-    return tangent * p.x + bitangent * p.y;
+    mat3 tbn = mat3(tangent, bitangent, normal);
+    return tbn * dir;
+}
+
+/**
+ * Generate a uniformly distributed random point on the unit disk 
+ * 
+ * Reference:
+ * https://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations
+ */
+vec2 randomDiskPoint(vec3 rand) {
+    vec2 u_offset = 2.f * rand.xy - vec2(1.f);
+    if (u_offset.x == 0.f && u_offset.y == 0.f)
+        return vec2(0.f);
+    
+    float theta, r;
+    if (abs(u_offset.x) > abs(u_offset.y)) {
+        r = u_offset.x;
+        theta = PI_OVER_FOUR * (u_offset.y / u_offset.x);
+    } else { 
+        r = u_offset.y;
+        theta = PI_OVER_TWO - PI_OVER_FOUR * (u_offset.x / u_offset.y);
+    }
+    return r * vec2(cos(theta), sin(theta));
 }
 
 /**
@@ -56,10 +78,10 @@ vec3 randomDiskPoint(vec3 rand, vec3 n) {
  * http://mathworld.wolfram.com/SpherePointPicking.html
  */
 vec3 randomSpherePoint(vec3 rand) {
-    float phi = rand.x * 2.0 * PI;
-    float cosTheta = rand.y * 2.0 - 1.0;
+    float phi = rand.x * 2.f * PI;
+    float cosTheta = 1.f - rand.y * 2.f;
     float cosTheta2 = cosTheta * cosTheta;
-    float sinTheta = sqrt(1.0 - cosTheta2);
+    float sinTheta = sqrt(max(0, 1.f - cosTheta2));
     float x = sinTheta * cos(phi);
     float y = sinTheta * sin(phi);
     float z = cosTheta;
@@ -68,9 +90,39 @@ vec3 randomSpherePoint(vec3 rand) {
 
 /**
 * Generate a uniformly distributed random point on the unit-hemisphere
+* Reference:
+* https://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations
 *
 */
 vec3 randomHemispherePoint(vec3 rand, vec3 n) {
-    vec3 v = randomSpherePoint(rand);
-    return v * sign(dot(v, n));
+    float z = rand.x;
+    float r = sqrt(max(0.f, 1.f - z * z));
+    float phi = 2.f * PI * rand.y;
+
+    vec3 dir = vec3(r * cos(phi), r * sin(phi), z);
+    return reorient(dir, n);
+}
+
+/**
+* Generate a cosine weighted random point on the unit-hemisphere
+* Reference:
+* https://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations
+*
+*/ 
+vec3 randomCosineHemispherePoint(vec3 rand, vec3 n) {
+    vec2 p = randomDiskPoint(rand);
+    float z = sqrt(max(0.f, 1.f - p.x*p.x - p.y*p.y));
+    vec3 dir = vec3(p, z);
+
+    return reorient(dir, n);
+}
+
+// TODO: Eventually replace this with a material model
+vec3 sampleBrdf(vec3 rand, vec3 n, inout vec3 w_i, inout float pdf) {
+    w_i = randomCosineHemispherePoint(rand, n);
+    pdf = dot(w_i, n) * ONE_OVER_PI;
+
+    vec3 c = vec3(0.2f);
+    float theta_i = dot(n, w_i);
+    return theta_i * c * ONE_OVER_PI;
 }
