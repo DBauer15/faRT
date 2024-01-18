@@ -6,6 +6,7 @@
 #include "common/types.glsl"
 #include "common/data.glsl"
 #include "common/random.glsl"
+#include "common/sampling.glsl"
 #include "common/intersect.glsl"
 
 uniform sampler2D u_frag_color_accum;
@@ -20,6 +21,9 @@ vec4 miss(Ray ray) {
 }
 
 vec4 closestHit(SurfaceInteraction si) {
+    uint pixel_id = uint(gl_FragCoord.y * u_viewport_size.x + gl_FragCoord.x);
+    RNG rng = make_random(pixel_id, u_frame_no);
+
     vec3 L = vec3(0.f);
     vec3 throughput = vec3(1.f);
     vec2 uv = gl_FragCoord.xy / u_viewport_size;
@@ -27,7 +31,7 @@ vec4 closestHit(SurfaceInteraction si) {
     vec3 f;
     float f_pdf;
     for (int i = 0; i < 5; i++) {
-        f = sampleBrdf(random3(vec3(uv, u_frame_no+i)), si.n, si.w_i, f_pdf);
+        f = sampleBrdf(next_random2f(rng), si.n, si.w_i, f_pdf);
         throughput = f * throughput / f_pdf;
 
         Ray ray;
@@ -48,7 +52,7 @@ vec4 closestHit(SurfaceInteraction si) {
         if (i > MIN_RR_DEPTH) {
             float q = max(throughput.x, max(throughput.y, throughput.z));
 
-            if (random(uv+i, u_frame_no+i) > q) {
+            if (next_randomf(rng) > q) {
                 break;
             } else {
                 throughput = throughput / (1 - q);

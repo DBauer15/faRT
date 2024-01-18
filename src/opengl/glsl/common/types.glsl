@@ -27,3 +27,7 @@ struct BVHNode {
     uint tri_count;
     uint filler; // TODO: Figure out a better way to deal with alignments
 };
+
+struct RNG {
+    uint state;
+};

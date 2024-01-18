@@ -1,10 +1,3 @@
-#define PI 3.14159265358979323846
-#define ONE_OVER_PI 0.31830988618379067154
-#define ONE_OVER_TWO_PI 0.15915494309189533577
-#define ONE_OVER_FOUR_PI 0.07957747154594766788
-#define PI_OVER_TWO 1.57079632679489661923
-#define PI_OVER_FOUR 0.78539816339744830961
-
 /*
  * From: Hash Functions for GPU Rendering
  * Reference: 
@@ -31,98 +24,65 @@ vec3 random3(vec3 f) {
     return uintBitsToFloat((pcg3d(floatBitsToUint(f)) & 0x007FFFFFu) | 0x3F800000u) - 1.0;
 }
 
-float random(vec2 xy, float z) {
-    return random3(vec3(xy, z)).x;
-}
-
 /* 
- * Reorients a vector around a normal
- *
- */
-vec3 reorient(vec3 dir, vec3 normal) {
-    vec3 tangent = cross(dir, normal);
-    vec3 bitangent = cross(tangent, normal);
-    tangent = cross(bitangent, normal);
-
-    // Orient towards normal
-    mat3 tbn = mat3(tangent, bitangent, normal);
-    return tbn * dir;
-}
-
-/**
- * Generate a uniformly distributed random point on the unit disk 
- * 
  * Reference:
- * https://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations
+ * https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
+ * https://github.com/ospray/ospray/blob/66fa8108485a8a92ff31ad2e06081bbaf391bc26/modules/cpu/math/random.ih
  */
-vec2 randomDiskPoint(vec3 rand) {
-    vec2 u_offset = 2.f * rand.xy - vec2(1.f);
-    if (u_offset.x == 0.f && u_offset.y == 0.f)
-        return vec2(0.f);
-    
-    float theta, r;
-    if (abs(u_offset.x) > abs(u_offset.y)) {
-        r = u_offset.x;
-        theta = PI_OVER_FOUR * (u_offset.y / u_offset.x);
-    } else { 
-        r = u_offset.y;
-        theta = PI_OVER_TWO - PI_OVER_FOUR * (u_offset.x / u_offset.y);
-    }
-    return r * vec2(cos(theta), sin(theta));
+
+uint murmurhash3_mix(uint hash, uint k)
+{
+  const uint c1 = 0xcc9e2d51;
+  const uint c2 = 0x1b873593;
+  const uint r1 = 15;
+  const uint r2 = 13;
+  const uint m = 5;
+  const uint n = 0xe6546b64;
+
+  k *= c1;
+  k = (k << r1) | (k >> (32 - r1));
+  k *= c2;
+
+  hash ^= k;
+  hash = ((hash << r2) | (hash >> (32 - r2))) * m + n;
+
+  return hash;
 }
 
-/**
- * Generate a uniformly distributed random point on the unit-sphere.
- * 
- * Reference:
- * http://mathworld.wolfram.com/SpherePointPicking.html
- */
-vec3 randomSpherePoint(vec3 rand) {
-    float phi = rand.x * 2.f * PI;
-    float cosTheta = 1.f - rand.y * 2.f;
-    float cosTheta2 = cosTheta * cosTheta;
-    float sinTheta = sqrt(max(0, 1.f - cosTheta2));
-    float x = sinTheta * cos(phi);
-    float y = sinTheta * sin(phi);
-    float z = cosTheta;
-    return vec3(x, y, z);
+uint murmurhash3_finalize(uint hash)
+{
+  hash ^= hash >> 16;
+  hash *= 0x85ebca6b;
+  hash ^= hash >> 13;
+  hash *= 0xc2b2ae35;
+  hash ^= hash >> 16;
+
+  return hash;
 }
 
-/**
-* Generate a uniformly distributed random point on the unit-hemisphere
-* Reference:
-* https://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations
-*
-*/
-vec3 randomHemispherePoint(vec3 rand, vec3 n) {
-    float z = rand.x;
-    float r = sqrt(max(0.f, 1.f - z * z));
-    float phi = 2.f * PI * rand.y;
+RNG make_random(uint pixel_id, uint frame_no) {
+    RNG rng;
+    rng.state = murmurhash3_mix(0, pixel_id);
+    rng.state = murmurhash3_mix(rng.state, frame_no);
+    rng.state = murmurhash3_finalize(rng.state);
 
-    vec3 dir = vec3(r * cos(phi), r * sin(phi), z);
-    return reorient(dir, n);
+    return rng;
 }
 
-/**
-* Generate a cosine weighted random point on the unit-hemisphere
-* Reference:
-* https://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations
-*
-*/ 
-vec3 randomCosineHemispherePoint(vec3 rand, vec3 n) {
-    vec2 p = randomDiskPoint(rand);
-    float z = sqrt(max(0.f, 1.f - p.x*p.x - p.y*p.y));
-    vec3 dir = vec3(p, z);
-
-    return reorient(dir, n);
+uint next_random(inout RNG rng) {
+    rng.state = 1664525u * rng.state + 1013904223u;
+    return rng.state;
 }
 
-// TODO: Eventually replace this with a material model
-vec3 sampleBrdf(vec3 rand, vec3 n, inout vec3 w_i, inout float pdf) {
-    w_i = randomCosineHemispherePoint(rand, n);
-    pdf = dot(w_i, n) * ONE_OVER_PI;
+float next_randomf(inout RNG rng) {
+    uint r = next_random(rng);
+    return uintBitsToFloat((r & 0x007FFFFFu) | 0x3F800000u) - 1.0;
+}
 
-    vec3 c = vec3(0.2f);
-    float theta_i = dot(n, w_i);
-    return theta_i * c * ONE_OVER_PI;
+vec3 next_random3f(inout RNG rng) {
+    return vec3(next_randomf(rng), next_randomf(rng), next_randomf(rng));
+}
+
+vec2 next_random2f(inout RNG rng) {
+    return vec2(next_randomf(rng), next_randomf(rng));
 }
