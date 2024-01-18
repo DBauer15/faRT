@@ -17,7 +17,7 @@ BVH::BVH(std::vector<Geometry>& geometries) {
         std::transform(m_indices.end() - geometry.indices.size(), m_indices.end(), m_indices.end() - geometry.indices.size(), [&](uint32_t index) {
                 return index + index_offset;
         });
-        index_offset += geometry.vertices.size() / 3;
+        index_offset += geometry.vertices.size();
     }
 
     build(m_vertices, m_indices);

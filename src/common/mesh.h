@@ -6,9 +6,8 @@
 
 namespace fart {
 
-// TODO Use this type in the geometry definition instead of raw floats
-struct AligendVertex {
-    alignas(16) glm::vec3 position;
+struct alignas(16) AligendVertex {
+    glm::vec3 position;
 };
 
 struct Geometry {
