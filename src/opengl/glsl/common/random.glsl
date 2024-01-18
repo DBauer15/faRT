@@ -1,35 +1,9 @@
-/*
- * From: Hash Functions for GPU Rendering
- * Reference: 
- * https://jcgt.org/published/0009/03/02/paper.pdf
- */
-uvec3 pcg3d(uvec3 v) {
-    v = v * 1664525u + 1013904223u;
-    v.x += v.y * v.z;
-    v.y += v.z * v.x;
-    v.z += v.x * v.y;
-    v ^= v >> 16u;
-    v.x += v.y * v.z;
-    v.y += v.z * v.x;
-    v.z += v.x * v.y;
-    return v;
-}
-
 /* 
- * Generates a random vec3 in [0, 1)
- * Reference: 
- * https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
- */
-vec3 random3(vec3 f) {
-    return uintBitsToFloat((pcg3d(floatBitsToUint(f)) & 0x007FFFFFu) | 0x3F800000u) - 1.0;
-}
-
-/* 
+ * A number of functions to generate LCG random sequences
  * Reference:
  * https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
  * https://github.com/ospray/ospray/blob/66fa8108485a8a92ff31ad2e06081bbaf391bc26/modules/cpu/math/random.ih
  */
-
 uint murmurhash3_mix(uint hash, uint k)
 {
   const uint c1 = 0xcc9e2d51;
