@@ -13,11 +13,10 @@ uniform sampler2D u_frag_color_accum;
 out vec4 frag_color;
 
 vec4 miss(Ray ray) {
-    float strength = 3.5f;
     vec4 sky = vec4(70./255., 169./255., 235./255., 1.f);
     vec4 haze = vec4(127./255., 108./255., 94./255., 1.f);
     vec4 background = mix(haze, sky, (ray.d.y + 1.f) /2.f);
-    return background * strength;
+    return background;
 }
 
 vec4 closestHit(SurfaceInteraction si) {

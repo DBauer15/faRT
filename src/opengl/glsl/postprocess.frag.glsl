@@ -10,5 +10,5 @@ out vec4 frag_color;
 
 void main() {
     vec4 c = texture(u_frag_color_accum, o_uv);
-    frag_color = gamma(tonemap_Reinhard(c));
+    frag_color = gamma(tonemap_ACES(c));
 }

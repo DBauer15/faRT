@@ -75,7 +75,7 @@ vec3 sampleBrdf(vec2 rand, vec3 n, inout vec3 w_i, inout float pdf) {
     w_i = randomCosineHemispherePoint(rand, n);
     pdf = dot(w_i, n) * ONE_OVER_PI;
 
-    vec3 c = vec3(0.2f);
+    vec3 c = vec3(0.85f);
     float theta_i = dot(n, w_i);
     return theta_i * c * ONE_OVER_PI;
 }
