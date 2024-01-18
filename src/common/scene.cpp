@@ -107,19 +107,19 @@ Scene::updateSceneScale() {
 
     for (auto& mesh : meshes) {
         for (auto& geometry : mesh.geometries) {
-            //min_vertex = std::min(min_vertex, *std::min_element(geometry.vertices.begin(), geometry.vertices.end()));
-            //min_vertex = std::min(min_vertex, glm::compMin(std::min(geometry.vertices, [](const AligendVertex v0, const AligendVertex v1) {
-                        //return glm::compMin(v0.position) < glm::compMin(v1.position);
-                        //})));
-            //max_vertex = std::max(max_vertex, *std::max_element(geometry.vertices.begin(), geometry.vertices.end()));
-            //min_vertex = std::max(min_vertex, glm::compMin(std::max(geometry.vertices, [](const AligendVertex v0, const AligendVertex v1) {
-                        //return glm::compMin(v0.position) < glm::compMin(v1.position);
-                        //})));
+            min_vertex = std::min(min_vertex, glm::compMin(std::min_element(geometry.vertices.begin(), geometry.vertices.end(),
+                            [](auto v0, auto v1) {
+                                return glm::compMin(v0.position) < glm::compMin(v1.position);
+                            })->position));
+
+            max_vertex = std::max(min_vertex, glm::compMax(std::max_element(geometry.vertices.begin(), geometry.vertices.end(),
+                            [](auto v0, auto v1) {
+                                return glm::compMax(v0.position) < glm::compMax(v1.position);
+                            })->position));
         }
     }
 
     m_scene_scale = max_vertex - min_vertex;
-    m_scene_scale = 1.f;
 }
 
 }
