@@ -23,14 +23,14 @@ BVH::BVH(std::vector<Geometry>& geometries) {
     build(m_vertices, m_indices);
 }
 
-BVH::BVH(std::vector<float>& vertices, std::vector<uint32_t>& indices) {
+BVH::BVH(std::vector<AligendVertex>& vertices, std::vector<uint32_t>& indices) {
     m_vertices = vertices;
     m_indices = indices;
     build(m_vertices, m_indices);
 }
 
 void
-BVH::build(std::vector<float>& vertices, std::vector<uint32_t>& indices) {
+BVH::build(std::vector<AligendVertex>& vertices, std::vector<uint32_t>& indices) {
         
     size_t N = indices.size() / 3;
     m_nodes_used = 1;
@@ -39,9 +39,9 @@ BVH::build(std::vector<float>& vertices, std::vector<uint32_t>& indices) {
 
     for (size_t i = 0; i < N; ++i) {
         
-        glm::vec3 t1 = glm::make_vec3(&vertices[3*indices[3*i]]);
-        glm::vec3 t2 = glm::make_vec3(&vertices[3*indices[3*i+1]]);
-        glm::vec3 t3 = glm::make_vec3(&vertices[3*indices[3*i+2]]);
+        const glm::vec3& t1 = vertices[indices[3*i]].position; //glm::make_vec3(&vertices[3*indices[3*i]]);
+        const glm::vec3& t2 = vertices[indices[3*i+1]].position; //glm::make_vec3(&vertices[3*indices[3*i+1]]);
+        const glm::vec3& t3 = vertices[indices[3*i+2]].position; //glm::make_vec3(&vertices[3*indices[3*i+2]]);
 
         m_centroids[i] = (t1 + t2 + t3) / 3.f;
     }
@@ -58,25 +58,25 @@ BVH::build(std::vector<float>& vertices, std::vector<uint32_t>& indices) {
 }
 
 void
-BVH::updateNodeBounds( uint32_t node_idx, std::vector<float>& vertices, std::vector<uint32_t>& indices) {
+BVH::updateNodeBounds( uint32_t node_idx, std::vector<AligendVertex>& vertices, std::vector<uint32_t>& indices) {
     BVHNode& node = m_bvh_nodes[node_idx];
     node.aabb_min = glm::vec4(1e30f);
     node.aabb_max = glm::vec4(-1e30f);
 
     for (uint32_t i = node.first_tri_index_id; i < node.first_tri_index_id + 3 * node.tri_count; i++) {
-        glm::vec3* t1 = (glm::vec3*) &vertices[3*indices[i]]; 
+        const glm::vec3& t1 = vertices[indices[i]].position;
 
-        node.aabb_min.x = std::min(node.aabb_min.x, t1->x);
-        node.aabb_min.y = std::min(node.aabb_min.y, t1->y);
-        node.aabb_min.z = std::min(node.aabb_min.z, t1->z);
-        node.aabb_max.x = std::max(node.aabb_max.x, t1->x);
-        node.aabb_max.y = std::max(node.aabb_max.y, t1->y);
-        node.aabb_max.z = std::max(node.aabb_max.z, t1->z);
+        node.aabb_min.x = std::min(node.aabb_min.x, t1.x);
+        node.aabb_min.y = std::min(node.aabb_min.y, t1.y);
+        node.aabb_min.z = std::min(node.aabb_min.z, t1.z);
+        node.aabb_max.x = std::max(node.aabb_max.x, t1.x);
+        node.aabb_max.y = std::max(node.aabb_max.y, t1.y);
+        node.aabb_max.z = std::max(node.aabb_max.z, t1.z);
     }
 }
 
 void
-BVH::subdivide( uint32_t node_idx, std::vector<float>& vertices, std::vector<uint32_t>& indices) {
+BVH::subdivide( uint32_t node_idx, std::vector<AligendVertex>& vertices, std::vector<uint32_t>& indices) {
 
     BVHNode& node = m_bvh_nodes[node_idx];
     if (node.tri_count <= 2) return;

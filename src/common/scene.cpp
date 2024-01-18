@@ -6,11 +6,11 @@
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
+#include <glm/gtx/component_wise.hpp>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-#include <iostream>
 namespace fart {
 
 Scene::Scene(std::string scene) {
@@ -79,22 +79,22 @@ Scene::loadObj(std::string scene) {
                 } else {
                     g_index = g_n_unique_idx_cnt++;
 
-                    g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index]);
-                    g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index + 1]);
-                    g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index + 2]);
+                    AligendVertex vertex;
+                    vertex.position = glm::vec3(attrib.vertices[3 * idx.vertex_index],
+                                                attrib.vertices[3 * idx.vertex_index + 1],
+                                                attrib.vertices[3 * idx.vertex_index + 2]);
 
-                    if (idx.normal_index != uint32_t(-1)) {
-                        g.normals.emplace_back(attrib.normals[3 * idx.normal_index]);
-                        g.normals.emplace_back(attrib.normals[3 * idx.normal_index + 1]);
-                        g.normals.emplace_back(attrib.normals[3 * idx.normal_index + 2]);
-                    }
+                    //g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index]);
+                    //g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index + 1]);
+                    //g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index + 2]);
+                    g.vertices.emplace_back(vertex);
 
                     index_map[key] = g_index;
                 }
                 g.indices.push_back(g_index);
             }
         }
-        SUCC("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ", n: " + std::to_string(g.normals.size()) + ")");
+        SUCC("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ")");
         m.geometries.push_back(g);
     }
     meshes.push_back(m);
@@ -107,12 +107,19 @@ Scene::updateSceneScale() {
 
     for (auto& mesh : meshes) {
         for (auto& geometry : mesh.geometries) {
-            min_vertex = std::min(min_vertex, *std::min_element(geometry.vertices.begin(), geometry.vertices.end()));
-            max_vertex = std::max(max_vertex, *std::max_element(geometry.vertices.begin(), geometry.vertices.end()));
+            //min_vertex = std::min(min_vertex, *std::min_element(geometry.vertices.begin(), geometry.vertices.end()));
+            //min_vertex = std::min(min_vertex, glm::compMin(std::min(geometry.vertices, [](const AligendVertex v0, const AligendVertex v1) {
+                        //return glm::compMin(v0.position) < glm::compMin(v1.position);
+                        //})));
+            //max_vertex = std::max(max_vertex, *std::max_element(geometry.vertices.begin(), geometry.vertices.end()));
+            //min_vertex = std::max(min_vertex, glm::compMin(std::max(geometry.vertices, [](const AligendVertex v0, const AligendVertex v1) {
+                        //return glm::compMin(v0.position) < glm::compMin(v1.position);
+                        //})));
         }
     }
 
     m_scene_scale = max_vertex - min_vertex;
+    m_scene_scale = 1.f;
 }
 
 }

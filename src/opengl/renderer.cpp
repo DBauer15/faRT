@@ -1,8 +1,6 @@
 #include "gldefs.h"
 #include "renderer.h"
-#include <cwchar>
 #include <memory>
-#include <stdexcept>
 #include <chrono>
 
 namespace fart {
@@ -50,16 +48,16 @@ OpenGlRenderer::initBuffers() {
     m_indices = std::make_unique<StorageBuffer>(1);
     m_bvh_buffer = std::make_unique<StorageBuffer>(2);
 
-    std::vector<float> vertices;
-    uint32_t n_inserted = 0;
-    for (auto& vertex : m_bvh->getVertices()) {
-        vertices.emplace_back(vertex);
-        if (++n_inserted % 3 == 0) {
-            vertices.emplace_back(0);
-        }
-    }
+    //std::vector<AligendVertex> vertices;
+    //uint32_t n_inserted = 0;
+    //for (auto& vertex : m_bvh->getVertices()) {
+        //vertices.emplace_back(vertex);
+        //if (++n_inserted % 3 == 0) {
+            //vertices.emplace_back(0);
+        //}
+    //}
     
-    m_vertices->setData(vertices);
+    m_vertices->setData(m_bvh->getVertices());
     m_indices->setData(m_bvh->getIndices());
     m_bvh_buffer->setData(m_bvh->getNodes());
 
