@@ -7,6 +7,7 @@
 #include "common/data.glsl"
 #include "common/random.glsl"
 #include "common/sampling.glsl"
+#include "common/material.glsl"
 #include "common/intersect.glsl"
 
 uniform sampler2D u_frag_color_accum;
@@ -30,7 +31,9 @@ vec4 closestHit(SurfaceInteraction si) {
     vec3 f;
     float f_pdf;
     for (int i = 0; i < 5; i++) {
-        f = sampleBrdf(next_random2f(rng), si.n, si.w_i, f_pdf);
+        si.w_i = bsdf_sample(si, rng);
+        f_pdf = bsdf_pdf(si, si.w_i);
+        f = bsdf_eval(si, si.w_i, si.w_o);
         throughput = f * throughput / f_pdf;
 
         Ray ray;

@@ -11,11 +11,19 @@ struct Ray {
     float t;
 };
 
+struct OpenPBRMaterial {
+    float base_weight;
+    vec3  base_color;
+    float base_roughness;
+    float base_metalness;
+};
+
 struct SurfaceInteraction {
     vec3 p;
     vec3 n;
     vec3 w_i;
     vec3 w_o;
+    OpenPBRMaterial mat;
     bool valid;
 };
 

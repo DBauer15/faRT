@@ -84,9 +84,6 @@ Scene::loadObj(std::string scene) {
                                                 attrib.vertices[3 * idx.vertex_index + 1],
                                                 attrib.vertices[3 * idx.vertex_index + 2]);
 
-                    //g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index]);
-                    //g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index + 1]);
-                    //g.vertices.emplace_back(attrib.vertices[3 * idx.vertex_index + 2]);
                     g.vertices.emplace_back(vertex);
 
                     index_map[key] = g_index;

@@ -50,6 +50,7 @@ float intersectAABB(Ray ray, BVHNode node) {
 SurfaceInteraction intersect(Ray ray) {
     SurfaceInteraction si;
     si.valid = false;
+    si.mat = OpenPBRMaterial( 1.f, vec3(0.85f, 0.75f, 0.75f), 1.f, 0.f );
 
     uint stack[64];
     int current = 0;
