@@ -1,5 +1,5 @@
 cmake -B build \
-    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_OPENGL_RENDERER=ON \
     -DBUILD_METAL_RENDERER=OFF \
     .
