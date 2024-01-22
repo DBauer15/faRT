@@ -52,7 +52,7 @@ SurfaceInteraction intersect(Ray ray) {
     si.valid = false;
     si.mat = OpenPBRMaterial( 1.f, vec3(0.85f, 0.75f, 0.75f), 1.f, 0.f );
 
-    uint stack[64];
+    uint stack[32];
     int current = 0;
     stack[current] = 0;
 
@@ -76,7 +76,7 @@ SurfaceInteraction intersect(Ray ray) {
                 if (left_dist < 1e30f) stack[++current] = node.left_child;
             }
         }
-    } while(current >= 0 && current < 64);
+    } while(current >= 0 && current < 32);
 
     si.p = ray.o + ray.d * ray.t;
     si.w_o = -ray.d;

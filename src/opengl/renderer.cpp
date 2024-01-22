@@ -50,7 +50,7 @@ OpenGlRenderer::initBuffers() {
 
     m_vertices->setData(m_bvh->getVertices());
     m_indices->setData(m_bvh->getIndices());
-    m_bvh_buffer->setData(m_bvh->getNodes());
+    m_bvh_buffer->setData(m_bvh->getNodes().data(), m_bvh->getNodesUsed());
 
     std::vector<float> quad {
         // first triangle
@@ -120,8 +120,8 @@ OpenGlRenderer::initGl() {
 
 bool
 OpenGlRenderer::shouldClear(const glm::vec3& eye, const glm::vec3& dir, const glm::vec3& up) {
-    bool clear = glm::any(glm::epsilonNotEqual(eye, m_prev_eye, 0.00001f)) |
-                 glm::any(glm::epsilonNotEqual(dir, m_prev_dir, 0.00001f)) |
+    bool clear = glm::any(glm::epsilonNotEqual(eye, m_prev_eye, 0.00001f)) ||
+                 glm::any(glm::epsilonNotEqual(dir, m_prev_dir, 0.00001f)) ||
                  glm::any(glm::epsilonNotEqual(up, m_prev_up, 0.00001f));
 
     m_prev_eye = eye;
