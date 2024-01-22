@@ -90,7 +90,7 @@ BVH::subdivide( uint32_t node_idx, std::vector<AligendVertex>& vertices, std::ve
 
     uint32_t i = node.first_tri_index_id;
     uint32_t j = i + (node.tri_count - 1)*3;
-    while (i < j) {
+    while (i <= j) {
 
         if (m_centroids[i/3][axis] < split_pos) {
             i+=3;
