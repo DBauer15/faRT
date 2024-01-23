@@ -12,10 +12,14 @@ struct Ray {
 };
 
 struct OpenPBRMaterial {
-    float base_weight;
     vec3  base_color;
+    float base_weight;
     float base_roughness;
-    float base_metalness;
+    vec3  specular_color;
+    float specular_weight;
+    float specular_roughness;
+    float specular_anisotropy;
+    float specular_rotation;
 };
 
 struct SurfaceInteraction {

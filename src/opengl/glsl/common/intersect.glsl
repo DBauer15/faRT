@@ -50,7 +50,7 @@ float intersectAABB(Ray ray, BVHNode node) {
 SurfaceInteraction intersect(Ray ray) {
     SurfaceInteraction si;
     si.valid = false;
-    si.mat = OpenPBRMaterial( 1.f, vec3(0.85f, 0.75f, 0.75f), 1.f, 0.f );
+    si.mat = OpenPBRMaterial(vec3(0.3f, 0.1f, 0.1f), 1.f, 0.01f, vec3(0), 0, 0, 0, 0);
 
     uint stack[32];
     int current = 0;
@@ -76,6 +76,7 @@ SurfaceInteraction intersect(Ray ray) {
                 if (left_dist < 1e30f) stack[++current] = node.left_child;
             }
         }
+        
     } while(current >= 0 && current < 32);
 
     si.p = ray.o + ray.d * ray.t;

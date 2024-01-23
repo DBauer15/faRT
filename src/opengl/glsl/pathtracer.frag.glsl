@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : enable 
 
 #define MIN_RR_DEPTH 3
+#define MAX_BOUNCES 5
 
 #include "common/types.glsl"
 #include "common/data.glsl"
@@ -30,10 +31,10 @@ vec4 closestHit(SurfaceInteraction si) {
 
     vec3 f;
     float f_pdf;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < MAX_BOUNCES; i++) {
         si.w_i = bsdf_sample(si, rng);
         f_pdf = bsdf_pdf(si, si.w_i);
-        f = bsdf_eval(si, si.w_i, si.w_o);
+        f = bsdf_eval(si, si.w_i, si.w_o, rng);
         throughput = f * throughput / f_pdf;
 
         Ray ray;

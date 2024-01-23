@@ -14,3 +14,7 @@ layout(std430, binding = 1) buffer geometry1 {
 layout(std430, binding = 2) buffer accel0 {
     BVHNode bvh [];
 };
+
+layout(std430, binding = 3) buffer mat0 {
+    OpenPBRMaterial materials [];
+};
