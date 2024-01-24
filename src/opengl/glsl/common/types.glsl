@@ -1,3 +1,8 @@
+struct Vertex {
+    vec3 position;
+    uint material_id;
+};
+
 struct Camera {
     vec3 eye;
     vec3 dir;
@@ -15,11 +20,14 @@ struct OpenPBRMaterial {
     vec3  base_color;
     float base_weight;
     float base_roughness;
+    float base_metalness;
     vec3  specular_color;
     float specular_weight;
     float specular_roughness;
     float specular_anisotropy;
     float specular_rotation;
+    float specular_ior;
+    float specular_ior_level;
 };
 
 struct SurfaceInteraction {

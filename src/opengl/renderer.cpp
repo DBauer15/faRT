@@ -47,10 +47,12 @@ OpenGlRenderer::initBuffers() {
     m_vertices = std::make_unique<StorageBuffer>(0);
     m_indices = std::make_unique<StorageBuffer>(1);
     m_bvh_buffer = std::make_unique<StorageBuffer>(2);
+    m_materials = std::make_unique<StorageBuffer>(3);
 
     m_vertices->setData(m_bvh->getVertices());
     m_indices->setData(m_bvh->getIndices());
     m_bvh_buffer->setData(m_bvh->getNodes().data(), m_bvh->getNodesUsed());
+    m_materials->setData(m_scene->getMaterials());
 
     std::vector<float> quad {
         // first triangle

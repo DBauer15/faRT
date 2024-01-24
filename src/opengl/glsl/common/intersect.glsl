@@ -1,9 +1,10 @@
 #define EPS 0.00000001
 
 bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_index) {
-    vec3 v0 = vertices[indices[first_index+0]].xyz;
-    vec3 v1 = vertices[indices[first_index+1]].xyz;
-    vec3 v2 = vertices[indices[first_index+2]].xyz;
+    uint material_id = vertices[indices[first_index+0]].material_id;
+    vec3 v0 = vertices[indices[first_index+0]].position.xyz;
+    vec3 v1 = vertices[indices[first_index+1]].position.xyz;
+    vec3 v2 = vertices[indices[first_index+2]].position.xyz;
 
     const vec3 edge1 = v1 - v0;
     const vec3 edge2 = v2 - v0;
@@ -24,6 +25,7 @@ bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_in
         if (t < ray.t) {
             si.n = normalize(cross(edge1, edge2));
             si.n = si.n * sign(dot(si.n, -ray.d));
+            si.mat = materials[material_id];
         }
         ray.t = min( ray.t, t );
         si.valid = true;
@@ -50,7 +52,6 @@ float intersectAABB(Ray ray, BVHNode node) {
 SurfaceInteraction intersect(Ray ray) {
     SurfaceInteraction si;
     si.valid = false;
-    si.mat = OpenPBRMaterial(vec3(0.3f, 0.1f, 0.1f), 1.f, 0.01f, vec3(0), 0, 0, 0, 0);
 
     uint stack[32];
     int current = 0;

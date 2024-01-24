@@ -8,6 +8,7 @@ namespace fart {
 
 struct alignas(16) AligendVertex {
     glm::vec3 position;
+    uint32_t material_id;
 };
 
 struct Geometry {

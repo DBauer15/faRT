@@ -4,6 +4,8 @@
 #define ONE_OVER_FOUR_PI 0.07957747154594766788
 #define PI_OVER_TWO 1.57079632679489661923
 #define PI_OVER_FOUR 0.78539816339744830961
+#define FLT_MAX 3.402823466e+38
+#define FLT_MIN 1.175494351e-38
 
 /* 
  * Reorients a vector around a normal
@@ -70,12 +72,3 @@ vec3 randomCosineHemispherePoint(vec2 rand, vec3 n) {
     return reorient(dir, n);
 }
 
-// TODO: Eventually replace this with a material model
-vec3 sampleBrdf(vec2 rand, vec3 n, inout vec3 w_i, inout float pdf) {
-    w_i = randomCosineHemispherePoint(rand, n);
-    pdf = dot(w_i, n) * ONE_OVER_PI;
-
-    vec3 c = vec3(0.85f);
-    float theta_i = dot(n, w_i);
-    return theta_i * c * ONE_OVER_PI;
-}

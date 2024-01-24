@@ -4,6 +4,9 @@
 - [ ] GitHub CI
 
 ## GLSL
+- [ ] Find a scale-dependent offset of ray origins to avoid self-intersections.
+- [ ] Fix BVH. Crashes for some scenes.
+- [ ] Clamp BRDF where necessary. Currently produces NaNs occasionally.
 - [X] Add accumulation buffer.
 - [X] Fix RNG 
 - [ ] Implement low-discrepancy sequence samplers

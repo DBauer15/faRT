@@ -1,11 +1,13 @@
 #include "defs.h"
-#include "mesh.h"
 #include "scene.h"
+#include "mesh.h"
+#include "material.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
+#include <glm/ext.hpp>
 #include <glm/gtx/component_wise.hpp>
 
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -21,30 +23,47 @@ Scene::Scene(std::string scene) {
         throw std::runtime_error("Unexpected file format " + extension);
 
     updateSceneScale();
-    SUCC("Finished loading " + std::to_string(meshes.size()) + " meshes."); 
+    SUCC("Finished loading " + std::to_string(m_meshes.size()) + " meshes."); 
 }
 
 void
 Scene::loadObj(std::string scene) {
 
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string warn;
-    std::string err;
+    tinyobj::ObjReaderConfig reader_config;
+    reader_config.mtl_search_path = scene.substr(0, scene.find_last_of('/'));
 
-    bool ok = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, scene.c_str());
-
-    if (!ok || !err.empty()) {
-        ERR("TinyObjLoader Error: " + err);
+    tinyobj::ObjReader reader;
+    if (!reader.ParseFromFile(scene, reader_config)) { 
+        if (!reader.Error().empty()) { 
+            ERR("TinyObjLoader Error: " + reader.Error());
+        }
         return;
     }
+    
+    if (!reader.Warning().empty()) {
+        WARN("TinyObjLoader Warning: " + reader.Warning());
+    }
 
-    if (!warn.empty())
-        WARN("TinyObjLoader Warning: " + warn);
-
+    auto& attrib = reader.GetAttrib();
+    auto& shapes = reader.GetShapes();
+    auto& materials = reader.GetMaterials();
     SUCC("Parsed OBJ file " + scene);
 
+    // Parse materials
+    for (const auto& material : materials) {
+        OpenPBRMaterial pbr_mat = OpenPBRMaterial::defaultMaterial();
+        pbr_mat.base_color = glm::make_vec3(material.diffuse);
+        pbr_mat.specular_color = glm::make_vec3(material.specular);
+        pbr_mat.specular_ior = material.ior;
+        pbr_mat.specular_roughness = (1.f - std::log10(material.shininess + 1) / 3.f); // TODO: This is not a good approximation of roughness as the Phong shininess is exponential
+        
+        LOG("Read material '" + material.name + "'");
+        m_materials.push_back(pbr_mat);
+    }
+    // Add a default material for faces that do not have a material id
+    m_materials.push_back(OpenPBRMaterial::defaultMaterial());
+
+    // Parse meshes
     Mesh m;
     for (const auto& shape : shapes) {
         const auto& mesh = shape.mesh;
@@ -83,6 +102,7 @@ Scene::loadObj(std::string scene) {
                     vertex.position = glm::vec3(attrib.vertices[3 * idx.vertex_index],
                                                 attrib.vertices[3 * idx.vertex_index + 1],
                                                 attrib.vertices[3 * idx.vertex_index + 2]);
+                    vertex.material_id = mesh.material_ids[f] < 0 ? m_materials.size() - 1 : mesh.material_ids[f];
 
                     g.vertices.emplace_back(vertex);
 
@@ -91,10 +111,10 @@ Scene::loadObj(std::string scene) {
                 g.indices.push_back(g_index);
             }
         }
-        SUCC("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ")");
+        LOG("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ")");
         m.geometries.push_back(g);
     }
-    meshes.push_back(m);
+    m_meshes.push_back(m);
 }
 
 void
@@ -102,7 +122,7 @@ Scene::updateSceneScale() {
     float min_vertex = 1e30f;
     float max_vertex = -1e30f;
 
-    for (auto& mesh : meshes) {
+    for (auto& mesh : m_meshes) {
         for (auto& geometry : mesh.geometries) {
             min_vertex = std::min(min_vertex, glm::compMin(std::min_element(geometry.vertices.begin(), geometry.vertices.end(),
                             [](auto v0, auto v1) {
