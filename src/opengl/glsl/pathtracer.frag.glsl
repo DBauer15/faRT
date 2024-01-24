@@ -16,7 +16,7 @@ uniform sampler2D u_frag_color_accum;
 out vec4 frag_color;
 
 vec4 miss(Ray ray) {
-    vec4 sky = vec4(70./255., 169./255., 235./255., 1.f);
+    vec4 sky = 2.f * vec4(70./255., 169./255., 235./255., 1.f);
     vec4 haze = vec4(127./255., 108./255., 94./255., 1.f);
     vec4 background = mix(haze, sky, (ray.d.y + 1.f) /2.f);
     return background;
@@ -33,13 +33,12 @@ vec4 closestHit(SurfaceInteraction si) {
     vec3 f;
     float f_pdf;
     for (int i = 0; i < MAX_BOUNCES; i++) {
-        si.w_i = bsdf_sample(si, rng);
-        f_pdf = bsdf_pdf(si, si.w_i);
+        si.w_i = bsdf_sample(si, f_pdf, rng);
         f = bsdf_eval(si, si.w_i, si.w_o, rng);
         throughput = f * throughput / f_pdf;
 
         Ray ray;
-        ray.o = si.p + 0.0001f * si.n;
+        ray.o = si.p + 0.000001f * u_scene_scale * si.n;
         ray.d = si.w_i;
         ray.rD = 1.f / si.w_i;
         ray.t = 1e30f;
@@ -90,5 +89,6 @@ void main() {
     else
         L = miss(ray);
 
+    L = clamp(L, 0.f, 8.f);
     frag_color = (u_frame_no * texture(u_frag_color_accum, uv) + L) / (u_frame_no + 1.f);
 }

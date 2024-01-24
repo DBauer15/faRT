@@ -1,7 +1,31 @@
 /*
+ * Implementation of the OpenPBR material model
+ * References:
+ * https://academysoftwarefoundation.github.io/OpenPBR/#model/
+ * https://cwyman.org/code/dxrTutors/tutors/Tutor14/tutorial14.md.html
+ *
+ */
+
+/*
  * Glossy Diffuse Reflection
  *
  */
+
+/* GGX Microfacet */
+vec3 sample_glossy(SurfaceInteraction si, inout float pdf, RNG rng) {
+    vec3 h = randomGGXMicrofacet(next_random2f(rng), si.n, si.mat.specular_roughness);
+    vec3 w = normalize(2.f * dot(si.w_o, h) * h - si.w_o);
+
+    float ndoth = dot(si.n, h);
+    float ndoth2 = ndoth * ndoth;
+    float a2 = si.mat.specular_roughness * si.mat.specular_roughness;
+    float d = (ndoth2 * (a2 - 1.f)) + 1.f;
+    float D = a2 / max(FLT_MIN, d * d * PI);
+
+    pdf = D * dot(si.n, h) / (4 * dot(w, si.n));
+    return w;
+}
+
 
 /* GGX Microfacet */
 vec3 eval_glossy(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
@@ -24,14 +48,14 @@ vec3 eval_glossy(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
     float d = (ndoth2 * (a2 - 1.f)) + 1.f;
     float D = a2 / max(FLT_MIN, d * d * PI);
 
-    return vec3(1.f) * (F * G * D) / (4.f * ndotv * ndotl);
+    return vec3(1.f) * (F * G * D) / (4.f * ndotv /* * ndotl */) /* * ndotl */; // ndotl (theta_i) left out for numerical robustness
 }
 
 /* Estimator for GGX Microfacet reflectanace */
 vec3 ggx_reflectance(SurfaceInteraction si, vec3 w_o, RNG rng) {
     vec3 reflectance = vec3(0.f);
     vec3 w_i;
-    const uint samples = 4;
+    const uint samples = 8;
     for (int i = 0; i < samples; i++) {
         w_i = randomHemispherePoint(next_random2f(rng), si.n);
         reflectance += eval_glossy(si, w_i, w_o);
@@ -40,6 +64,16 @@ vec3 ggx_reflectance(SurfaceInteraction si, vec3 w_o, RNG rng) {
 }
 
 /* Lambertian Diffuse */
+vec3 sample_diffuse(SurfaceInteraction si, inout float pdf, RNG rng) {
+    vec3 w = randomCosineHemispherePoint(next_random2f(rng), si.n);
+    float theta = dot(w, si.n);
+    if (theta < 0.f)
+        pdf = 0;
+    else
+        pdf = theta * ONE_OVER_PI;
+    return w;
+}
+
 vec3 eval_diffuse(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
     return si.mat.base_weight * si.mat.base_color * dot(w_i, si.n) * ONE_OVER_PI;
 }
@@ -55,21 +89,23 @@ vec3 eval_glossy_diffuse(SurfaceInteraction si, vec3 w_i, vec3 w_o, RNG rng) {
  * Top-Level BxDF functions called by the renderer
  *
  */
-vec3 bsdf_sample(SurfaceInteraction si, RNG rng) {
-    vec3 w = randomCosineHemispherePoint(next_random2f(rng), si.n);
-    return w;
-}
+vec3 bsdf_sample(SurfaceInteraction si, inout float pdf, RNG rng) {
+    vec3 w;
 
-float bsdf_pdf(SurfaceInteraction si, vec3 w) {
-    float theta = dot(w, si.n);
-    if (theta < 0.f)
-        return 0.f;
-    return theta * ONE_OVER_PI;
+    // TODO: Find better heuristic to choose the sampler
+    float q = next_randomf(rng);
+    if (q < 0.5f) {
+        w = sample_diffuse(si, pdf, rng);
+    } else {
+        w = sample_glossy(si, pdf, rng);
+    }
+
+    return w;
 }
 
 vec3 bsdf_eval(SurfaceInteraction si, vec3 w_i, vec3 w_o, RNG rng) {
     const float rec_n_components = 1.f;
     vec3 f = vec3(0.f);
-    f += clamp(eval_glossy_diffuse(si, w_i, w_o, rng), 0.f, 1000.f);
+    f += eval_glossy_diffuse(si, w_i, w_o, rng);
     return f * rec_n_components * dot(w_i, si.n);
 }

@@ -136,6 +136,7 @@ OpenGlRenderer::shouldClear(const glm::vec3& eye, const glm::vec3& dir, const gl
 void
 OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 up, RenderStats& render_stats) {
     auto t_start = std::chrono::high_resolution_clock::now();
+    float scene_scale = m_scene->getSceneScale();
     auto viewport_size = m_window->getViewportSize();
     float aspect_ratio = (float)viewport_size.x / viewport_size.y;
     glViewport(0, 0, viewport_size.x, viewport_size.y);
@@ -154,6 +155,7 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
         m_framebuffer0->bind();
         m_shader_pathtracer->use();
         m_shader_pathtracer->setUInt("u_frame_no", &m_frame_no);
+        m_shader_pathtracer->setFloat("u_scene_scale", &scene_scale);
         m_shader_pathtracer->setUInt2("u_viewport_size", glm::value_ptr(viewport_size));
         m_shader_pathtracer->setFloat("u_aspect_ratio", &aspect_ratio);
         m_shader_pathtracer->setFloat3("u_camera.eye", glm::value_ptr(eye));

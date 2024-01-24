@@ -1,4 +1,5 @@
 uniform uint u_frame_no;
+uniform float u_scene_scale;
 uniform uvec2 u_viewport_size;
 uniform float u_aspect_ratio;
 uniform Camera u_camera;

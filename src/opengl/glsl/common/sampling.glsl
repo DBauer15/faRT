@@ -72,3 +72,19 @@ vec3 randomCosineHemispherePoint(vec2 rand, vec3 n) {
     return reorient(dir, n);
 }
 
+/**
+* Generates a random sample from the GGX NDF to get a microfacet
+* Reference:
+* https://cwyman.org/code/dxrTutors/tutors/Tutor14/tutorial14.md.html
+*
+*/ 
+vec3 randomGGXMicrofacet(vec2 rand, vec3 n, float roughness) {
+	// GGX NDF sampling
+	float a2 = roughness * roughness;
+	float cos_theta_h = sqrt(max(0.f, (1.f-rand.x)/((a2-1.0)*rand.x+1) ));
+	float sin_theta_h = sqrt(max(0.f, 1.f - cos_theta_h * cos_theta_h));
+	float phi_h = rand.y * PI * 2.f;
+
+    vec3 dir = vec3(sin_theta_h * cos(phi_h), sin_theta_h * sin(phi_h), cos_theta_h);
+    return reorient(dir, n);
+}

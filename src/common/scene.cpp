@@ -55,7 +55,7 @@ Scene::loadObj(std::string scene) {
         pbr_mat.base_color = glm::make_vec3(material.diffuse);
         pbr_mat.specular_color = glm::make_vec3(material.specular);
         pbr_mat.specular_ior = material.ior;
-        pbr_mat.specular_roughness = (1.f - std::log10(material.shininess + 1) / 3.f); // TODO: This is not a good approximation of roughness as the Phong shininess is exponential
+        pbr_mat.specular_roughness = std::clamp((1.f - std::log10(material.shininess + 1) / 3.f), 0.01f, 1.f); // TODO: This is not a good approximation of roughness as the Phong shininess is exponential
         
         LOG("Read material '" + material.name + "'");
         m_materials.push_back(pbr_mat);
