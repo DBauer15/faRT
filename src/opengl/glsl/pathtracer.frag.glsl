@@ -18,7 +18,7 @@ out vec4 frag_color;
 vec4 miss(Ray ray) {
     vec4 sky = vec4(70./255., 169./255., 235./255., 1.f);
     vec4 haze = vec4(127./255., 108./255., 94./255., 1.f);
-    vec4 background = mix(haze*2, sky, (ray.d.z + 1.f) /2.f);
+    vec4 background = mix(haze, sky, (ray.d.y + 1.f) /2.f);
     return background;
 }
 
@@ -39,7 +39,7 @@ vec4 closestHit(SurfaceInteraction si) {
         throughput = f * throughput / f_pdf;
 
         Ray ray;
-        ray.o = si.p + 0.1f * si.n;
+        ray.o = si.p + 0.0001f * si.n;
         ray.d = si.w_i;
         ray.rD = 1.f / si.w_i;
         ray.t = 1e30f;
