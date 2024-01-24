@@ -1,5 +1,13 @@
 #define EPS 0.00000001
 
+vec3 getNormal(uint first_index, vec3 bary) {
+    vec3 n0 = vertices[indices[first_index+0]].normal.xyz;
+    vec3 n1 = vertices[indices[first_index+1]].normal.xyz;
+    vec3 n2 = vertices[indices[first_index+2]].normal.xyz;
+
+    return normalize(n0 * bary.x + n1 * bary.y + n2 * bary.z);
+}
+
 bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_index) {
     uint material_id = vertices[indices[first_index+0]].material_id;
     vec3 v0 = vertices[indices[first_index+0]].position.xyz;
@@ -23,7 +31,9 @@ bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_in
         // update ray and SurfaceInteraction
         // TODO: This could be moved to somewhere nicer with less divergence
         if (t < ray.t) {
-            si.n = normalize(cross(edge1, edge2));
+            //si.n = normalize(cross(edge1, edge2));
+            vec3 bary = vec3(1.f - u - v, u, v);
+            si.n = getNormal(first_index, bary);
             si.n = si.n * sign(dot(si.n, -ray.d));
             si.mat = materials[material_id];
         }

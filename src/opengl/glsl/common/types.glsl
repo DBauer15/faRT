@@ -1,6 +1,7 @@
 struct Vertex {
     vec3 position;
     uint material_id;
+    vec3 normal;
 };
 
 struct Camera {
