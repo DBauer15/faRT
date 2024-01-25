@@ -81,7 +81,7 @@ vec3 randomCosineHemispherePoint(vec2 rand, vec3 n) {
 vec3 randomGGXMicrofacet(vec2 rand, vec3 n, float roughness) {
 	// GGX NDF sampling
 	float a2 = roughness * roughness;
-	float cos_theta_h = sqrt(max(0.f, (1.f-rand.x)/((a2-1.0)*rand.x+1) ));
+	float cos_theta_h = sqrt(max(0.f, (1.f-rand.x)/((a2-1.f)*rand.x+1.f) ));
 	float sin_theta_h = sqrt(max(0.f, 1.f - cos_theta_h * cos_theta_h));
 	float phi_h = rand.y * PI * 2.f;
 

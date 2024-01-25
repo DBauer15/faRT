@@ -34,6 +34,7 @@ vec4 closestHit(SurfaceInteraction si) {
     float f_pdf;
     for (int i = 0; i < MAX_BOUNCES; i++) {
         si.w_i = bsdf_sample(si, f_pdf, rng);
+        if (f_pdf <= 0.f) break;
         f = bsdf_eval(si, si.w_i, si.w_o, rng);
         throughput = f * throughput / f_pdf;
 

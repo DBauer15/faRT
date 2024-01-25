@@ -12,24 +12,29 @@
  */
 
 /* GGX Microfacet */
-vec3 sample_glossy(SurfaceInteraction si, inout float pdf, RNG rng) {
+float pdf_glossy(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
+    float theta_i = dot(si.n, w_i);
+    float theta_o = dot(si.n, w_o);
+    if (theta_i < 0.f || theta_o < 0.f) return 0.f;
+
+    vec3 h = normalize(w_i + w_o);
+    float theta_h = dot(si.n, h);
+    float theta_h_2 = theta_h * theta_h;
+    float a2 = si.mat.specular_roughness * si.mat.specular_roughness;
+    float d = (theta_h_2 * (a2 - 1.f)) + 1.f;
+    float D = a2 / max(FLT_MIN, d * d) * ONE_OVER_PI;
+
+    return D * theta_h / max(FLT_MIN, 4 * dot(w_o, h));
+}
+
+vec3 sample_glossy(SurfaceInteraction si, RNG rng) {
     vec3 h = randomGGXMicrofacet(next_random2f(rng), si.n, si.mat.specular_roughness);
     vec3 w = normalize(2.f * dot(si.w_o, h) * h - si.w_o);
 
-    float ndoth = dot(si.n, h);
-    float ndoth2 = ndoth * ndoth;
-    float a2 = si.mat.specular_roughness * si.mat.specular_roughness;
-    float d = (ndoth2 * (a2 - 1.f)) + 1.f;
-    float D = a2 / max(FLT_MIN, d * d * PI);
-
-    pdf = D * dot(si.n, h) / (4 * dot(w, si.n));
     return w;
 }
 
-
-/* GGX Microfacet */
 vec3 eval_glossy(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
-    //vec3 h = normalize((w_i + w_o) / abs(w_i + w_o));
     vec3 h = normalize(w_i + w_o);
 
     vec3 f0 = vec3(1.f) * pow((1 - si.mat.specular_ior) / (1 + si.mat.specular_ior), 2.f);
@@ -42,7 +47,7 @@ vec3 eval_glossy(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
     float g_l = ndotl / max(FLT_MIN, (ndotl*(1.f-k) + k));
     float G = g_v * g_l;
 
-    float ndoth = dot(h, si.n);
+    float ndoth = max(0, dot(h, si.n));
     float ndoth2 = ndoth * ndoth;
     float a2 = si.mat.specular_roughness * si.mat.specular_roughness;
     float d = (ndoth2 * (a2 - 1.f)) + 1.f;
@@ -64,13 +69,15 @@ vec3 ggx_reflectance(SurfaceInteraction si, vec3 w_o, RNG rng) {
 }
 
 /* Lambertian Diffuse */
-vec3 sample_diffuse(SurfaceInteraction si, inout float pdf, RNG rng) {
+float pdf_diffuse(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
+    float theta_i = dot(si.n, w_i);
+    float theta_o = dot(si.n, w_o);
+    if (theta_i < 0.f || theta_o < 0.f) return 0.f;
+    return theta_i * ONE_OVER_PI;
+}
+
+vec3 sample_diffuse(SurfaceInteraction si, RNG rng) {
     vec3 w = randomCosineHemispherePoint(next_random2f(rng), si.n);
-    float theta = dot(w, si.n);
-    if (theta < 0.f)
-        pdf = 0;
-    else
-        pdf = theta * ONE_OVER_PI;
     return w;
 }
 
@@ -80,8 +87,10 @@ vec3 eval_diffuse(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
 
 vec3 eval_glossy_diffuse(SurfaceInteraction si, vec3 w_i, vec3 w_o, RNG rng) {
     // Compute reflectance estimate for albedo scaling
-    vec3 E_glossy = ggx_reflectance(si, w_o, rng);
-    return (1.f - E_glossy) * eval_diffuse(si, w_i, w_o) + eval_glossy(si, w_i, w_o);
+    //return eval_diffuse(si, w_i, w_o);
+    //vec3 E_glossy = ggx_reflectance(si, w_o, rng);
+    return eval_diffuse(si, w_i, w_o) + eval_glossy(si, w_i, w_o);
+    //return (1.f - E_glossy) * eval_diffuse(si, w_i, w_o) + eval_glossy(si, w_i, w_o);
 }
 
 
@@ -89,17 +98,25 @@ vec3 eval_glossy_diffuse(SurfaceInteraction si, vec3 w_i, vec3 w_o, RNG rng) {
  * Top-Level BxDF functions called by the renderer
  *
  */
+float bsdf_pdf(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
+    float diffuse = pdf_diffuse(si, w_i, w_o);
+    float glossy = pdf_glossy(si, w_i, w_o);
+
+    return (diffuse + glossy) / 2.f;
+}
+
 vec3 bsdf_sample(SurfaceInteraction si, inout float pdf, RNG rng) {
     vec3 w;
 
     // TODO: Find better heuristic to choose the sampler
     float q = next_randomf(rng);
     if (q < 0.5f) {
-        w = sample_diffuse(si, pdf, rng);
+        w = sample_diffuse(si, rng);
     } else {
-        w = sample_glossy(si, pdf, rng);
+        w = sample_glossy(si, rng);
     }
 
+    pdf = bsdf_pdf(si, w, si.w_o);
     return w;
 }
 
