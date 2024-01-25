@@ -29,7 +29,7 @@ float pdf_glossy(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
 
 vec3 sample_glossy(SurfaceInteraction si, RNG rng) {
     vec3 h = randomGGXMicrofacet(next_random2f(rng), si.n, si.mat.specular_roughness);
-    vec3 w = normalize(2.f * dot(si.w_o, h) * h - si.w_o);
+    vec3 w = reflect(-si.w_o, h);
 
     return w;
 }
@@ -38,7 +38,7 @@ vec3 eval_glossy(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
     vec3 h = normalize(w_i + w_o);
 
     vec3 f0 = vec3(1.f) * pow((1 - si.mat.specular_ior) / (1 + si.mat.specular_ior), 2.f);
-    vec3 F = f0 + (vec3(1.f) - f0) * pow(1.f - dot(w_o, h), 5.f);
+    vec3 F = f0 + (vec3(1.f) - f0) * pow(1.f - max(0, dot(w_i, h)), 5.f);
 
     float k = si.mat.specular_roughness * si.mat.specular_roughness / 2.f;
     float ndotv = dot(si.n, w_o);
@@ -87,10 +87,9 @@ vec3 eval_diffuse(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
 
 vec3 eval_glossy_diffuse(SurfaceInteraction si, vec3 w_i, vec3 w_o, RNG rng) {
     // Compute reflectance estimate for albedo scaling
-    //return eval_diffuse(si, w_i, w_o);
     //vec3 E_glossy = ggx_reflectance(si, w_o, rng);
-    return eval_diffuse(si, w_i, w_o) + eval_glossy(si, w_i, w_o);
     //return (1.f - E_glossy) * eval_diffuse(si, w_i, w_o) + eval_glossy(si, w_i, w_o);
+    return eval_diffuse(si, w_i, w_o) + eval_glossy(si, w_i, w_o);
 }
 
 

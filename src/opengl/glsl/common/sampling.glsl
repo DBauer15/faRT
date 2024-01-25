@@ -1,3 +1,4 @@
+#define EPS 0.00000001
 #define PI 3.14159265358979323846
 #define ONE_OVER_PI 0.31830988618379067154
 #define ONE_OVER_TWO_PI 0.15915494309189533577
@@ -9,16 +10,36 @@
 
 /* 
  * Reorients a vector around a normal
+ * References:
+ * https://www.tandfonline.com/doi/abs/10.1080/2151237X.2009.10129274
+ * https://graphics.pixar.com/library/OrthonormalB/paper.pdf
  *
  */
 vec3 reorient(vec3 dir, vec3 normal) {
-    vec3 tangent = cross(dir, normal);
-    vec3 bitangent = cross(tangent, normal);
-    tangent = cross(bitangent, normal);
+    //vec3 a = abs(normal);
+    //uint xm = ((a.x - a.y) < 0 && (a.x - a.z) < 0) ? 1 : 0;
+    //uint ym = (a.y - a.z) < 0 ? (1 ^ xm) : 0;
+    //uint zm = 1 ^ (xm | ym);
+
+    //vec3 tangent = cross(vec3(xm, ym, zm), normal);
+    //vec3 bitangent = cross(tangent, normal);
+
+    //vec3 y = vec3(0, 1, 0);
+    //if (dot(normal, y) < EPS)
+        //y = vec3(0, 0, 1);
+    //vec3 tangent = cross(normal, y);
+    //vec3 bitangent = cross(normal, tangent);
+
+
+    //TODO: Somehow sign(normal.z) causes issues; Keep this in mind if problems arise later for sphere sampling
+    float sign = normal.z < 0.f ? -1.f : 1.f; //sign(normal.z);
+    float a = -1.f / (sign + normal.z);
+    float b = normal.x * normal.y * a;
+    vec3 tangent = vec3(1.f + sign * normal.x * normal.x * a, sign * b, -sign * normal.x);
+    vec3 bitangent = vec3(b, sign + normal.y * normal.y * a, -normal.y);
 
     // Orient towards normal
-    mat3 tbn = mat3(tangent, bitangent, normal);
-    return tbn * dir;
+    return dir.x * tangent + dir.y * bitangent + dir.z * normal;
 }
 
 /**

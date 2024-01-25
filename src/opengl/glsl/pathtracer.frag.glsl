@@ -16,9 +16,9 @@ uniform sampler2D u_frag_color_accum;
 out vec4 frag_color;
 
 vec4 miss(Ray ray) {
-    vec4 sky = 2.f * vec4(70./255., 169./255., 235./255., 1.f);
+    vec4 sky = vec4(70./255., 169./255., 235./255., 1.f);
     vec4 haze = vec4(127./255., 108./255., 94./255., 1.f);
-    vec4 background = mix(haze, sky, (ray.d.y + 1.f) /2.f);
+    vec4 background = mix(sky, haze, (ray.d.y + 1.f) /2.f);
     return background;
 }
 
@@ -90,6 +90,6 @@ void main() {
     else
         L = miss(ray);
 
-    L = clamp(L, 0.f, 8.f);
+    L = clamp(L, 0.f, 10.f);
     frag_color = (u_frame_no * texture(u_frag_color_accum, uv) + L) / (u_frame_no + 1.f);
 }

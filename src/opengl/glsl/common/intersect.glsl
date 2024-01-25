@@ -1,5 +1,3 @@
-#define EPS 0.00000001
-
 vec3 getNormal(uint first_index, vec3 bary) {
     vec3 n0 = vertices[indices[first_index+0]].normal.xyz;
     vec3 n1 = vertices[indices[first_index+1]].normal.xyz;

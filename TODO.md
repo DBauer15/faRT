@@ -4,6 +4,7 @@
 - [ ] GitHub CI
 
 ## GLSL
+- [ ] Find a better way to orthonormalize directions. 
 - [ ] Find a scale-dependent offset of ray origins to avoid self-intersections. (Ray Tracing Gems Chapter 6)
 - [ ] Implement path regularization to address fireflies. Currently, I use clamping. (Ray Tracing Gems Chapter 17)
 - [ ] Fix BVH. Crashes for some scenes.

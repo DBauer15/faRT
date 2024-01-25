@@ -48,11 +48,18 @@ Scene::loadObj(std::string scene) {
     auto& materials = reader.GetMaterials();
 
     // Deal with normals
-    LOG("Calculating normals");
+    bool calculate_normals = in_attrib.normals.size() == 0;
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
-    computeSmoothingShapes(in_attrib, attrib, in_shapes, shapes);
-    computeAllSmoothingNormals(attrib, shapes);
+    if (calculate_normals) {
+        LOG("Calculating normals");
+        computeSmoothingShapes(in_attrib, attrib, in_shapes, shapes);
+        computeAllSmoothingNormals(attrib, shapes);
+    } else {
+        LOG("Using normals provided by OBJ");
+        attrib = in_attrib;
+        shapes = in_shapes;
+    }
 
     SUCC("Parsed OBJ file " + scene);
 
