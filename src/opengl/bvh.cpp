@@ -38,9 +38,7 @@ Bounds::extend(const glm::vec3& other) {
 BVH::BVH(std::vector<Geometry>& geometries, BVHSplitMethod split_method) {
     size_t index_offset = 0;
     for (auto& geometry : geometries) {
-        m_vertices.reserve(m_vertices.size() + geometry.vertices.size());
         m_vertices.insert(m_vertices.end(), geometry.vertices.begin(), geometry.vertices.end());
-        m_indices.reserve(m_indices.size() + geometry.indices.size());
         m_indices.insert(m_indices.end(), geometry.indices.begin(), geometry.indices.end());
 
         std::transform(m_indices.end() - geometry.indices.size(), m_indices.end(), m_indices.end() - geometry.indices.size(), [&](uint32_t index) {

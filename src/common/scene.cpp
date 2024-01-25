@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
+#include <unordered_map>
 #include <glm/ext.hpp>
 #include <glm/gtx/component_wise.hpp>
 
