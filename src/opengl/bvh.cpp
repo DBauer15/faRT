@@ -2,6 +2,7 @@
 
 #include "common/defs.h"
 #include <algorithm>
+#include <numeric>
 #include <string>
 #include <chrono>
 
@@ -37,6 +38,12 @@ Bounds::extend(const glm::vec3& other) {
 
 BVH::BVH(std::vector<Geometry>& geometries, BVHSplitMethod split_method) {
     size_t index_offset = 0;
+
+    size_t vertices_size = std::accumulate(geometries.begin(), geometries.end(), 0, [](size_t acc, const Geometry& el) { return acc + el.vertices.size(); });
+    m_vertices.reserve(vertices_size);
+    size_t indices_size = std::accumulate(geometries.begin(), geometries.end(), 0, [](size_t acc, const Geometry& el) { return acc + el.indices.size(); });
+    m_indices.reserve(indices_size);
+
     for (auto& geometry : geometries) {
         m_vertices.insert(m_vertices.end(), geometry.vertices.begin(), geometry.vertices.end());
         m_indices.insert(m_indices.end(), geometry.indices.begin(), geometry.indices.end());
