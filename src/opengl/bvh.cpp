@@ -105,10 +105,8 @@ BVH::updateNodeBounds( uint32_t node_idx ) {
 
 void
 BVH::subdivide( uint32_t node_idx ) {
-
     uint32_t axis = 0;
-
-    float split_pos;
+    float split_pos = 0.f;
     switch (m_split_method) {
         case BVHSplitMethod::Equal: 
             if (!splitEqual(node_idx, split_pos, axis)) return;
@@ -119,8 +117,8 @@ BVH::subdivide( uint32_t node_idx ) {
     }
 
     BVHNode& node = m_bvh_nodes[node_idx];
-    uint32_t i = node.first_tri_index_id;
-    uint32_t j = i + (node.tri_count - 1)*3;
+    int32_t i = node.first_tri_index_id;
+    int32_t j = i + (node.tri_count - 1) * 3;
     while (i <= j) {
 
         if (m_centroids[i/3][axis] < split_pos) {
@@ -178,7 +176,7 @@ BVH::splitSAH(uint32_t node_idx, float& split_pos, uint32_t& axis) {
 
     const BVHNode& node = m_bvh_nodes[node_idx];
     const glm::vec3 node_extent = node.aabb.extent();
-    if (node.tri_count <= 2) return false;
+    if (node.tri_count <= 4) return false;
 
     constexpr int n_buckets = 12;
     constexpr int n_splits = n_buckets - 1;
@@ -226,6 +224,7 @@ BVH::splitSAH(uint32_t node_idx, float& split_pos, uint32_t& axis) {
         }
 
     }
+    if (min_cost_split_bucket < 0) return false;
 
     float leaf_cost = node.tri_count;
     min_cost = 1.f / 2.f + min_cost / node.aabb.surfaceArea();
