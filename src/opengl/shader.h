@@ -19,6 +19,11 @@ struct Shader {
 
     public:
         Shader(std::string vert_binary_path, std::string frag_binary_path);
+        Shader(Shader& other) = delete;
+        Shader(Shader&& other);
+        Shader& operator=(Shader& other) = delete;
+        Shader& operator=(Shader&& other);
+        ~Shader();
 
         void use();
         void unuse();

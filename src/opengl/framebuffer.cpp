@@ -6,6 +6,20 @@ FrameBuffer::FrameBuffer() {
     glGenFramebuffers(1, &m_framebuffer);
 }
 
+FrameBuffer::FrameBuffer(FrameBuffer&& other) {
+    m_framebuffer = other.m_framebuffer;
+    other.m_framebuffer = 0;
+}
+
+FrameBuffer&
+FrameBuffer::operator=(FrameBuffer&& other) {
+    glDeleteFramebuffers(1, &m_framebuffer);
+    m_framebuffer = other.m_framebuffer;
+    other.m_framebuffer = 0;
+
+    return *this;
+}
+
 FrameBuffer::~FrameBuffer() {
     glDeleteFramebuffers(1, &m_framebuffer);
 }

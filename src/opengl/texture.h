@@ -13,9 +13,17 @@ struct Texture {
                 GLenum internal_format = GL_RGBA32F,
                 GLenum src_format = GL_RGBA,
                 GLenum src_type = GL_UNSIGNED_BYTE);
+        Texture(Texture& other) = delete;
+        Texture(Texture&& other);
+        Texture& operator=(Texture& other) = delete;
+        Texture& operator=(Texture&& other);
         ~Texture();
 
-        void setData(char* data, GLenum min_filter, GLenum mag_filter);
+        void setData(uint8_t* data, 
+                     GLenum min_filter = GL_NEAREST, 
+                     GLenum mag_filter = GL_LINEAR,
+                     GLenum wrap_s = GL_MIRRORED_REPEAT,
+                     GLenum wrap_t = GL_MIRRORED_REPEAT);
         void resize(uint32_t width, uint32_t height);
         void clear();
 

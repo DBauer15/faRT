@@ -15,14 +15,41 @@ Texture::Texture(const uint32_t width,
     resize(width, height);
 }
 
+Texture::Texture(Texture&& other) {
+    m_texture = other.m_texture;
+    m_width = other.m_width;
+    m_height = other.m_height;
+    m_internal_format = other.m_internal_format;
+    m_src_format = other.m_src_format;
+    m_src_type = other.m_src_type;
+    other.m_texture = 0;
+}
+
+Texture&
+Texture::operator=(Texture&& other) {
+    glDeleteTextures(1, &m_texture);
+    m_texture = other.m_texture;
+    m_width = other.m_width;
+    m_height = other.m_height;
+    m_internal_format = other.m_internal_format;
+    m_src_format = other.m_src_format;
+    m_src_type = other.m_src_type;
+
+    other.m_texture = 0;
+
+    return *this;
+}
+
 Texture::~Texture() {
     glDeleteTextures(1, &m_texture);
 }
 
 void
-Texture::setData(char* data,
-                 GLenum min_filter = GL_NEAREST,
-                 GLenum mag_filter = GL_NEAREST) {
+Texture::setData(uint8_t* data,
+                 GLenum min_filter,
+                 GLenum mag_filter,
+                 GLenum wrap_s,
+                 GLenum wrap_t) {
     bind();
     glTexImage2D(GL_TEXTURE_2D, 
                  0, m_internal_format,
@@ -31,6 +58,8 @@ Texture::setData(char* data,
     glGenerateMipmap(GL_TEXTURE_2D);
     glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
     glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
+    glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
+    glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_t);
     unbind();
 }
 

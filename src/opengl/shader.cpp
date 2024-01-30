@@ -11,6 +11,24 @@ Shader::Shader(std::string vert_binary_path, std::string frag_binary_path) {
     m_program = loadShaderProgram(vert_binary_path, frag_binary_path);
 }
 
+Shader::Shader(Shader&& other) {
+    m_program = other.m_program;
+    other.m_program = 0;
+}
+
+Shader&
+Shader::operator=(Shader&& other) {
+    glDeleteProgram(m_program);
+    m_program = other.m_program;
+    other.m_program = 0;
+
+    return *this;
+}
+
+Shader::~Shader() {
+    glDeleteProgram(m_program);
+}
+
 void
 Shader::use() {
     glUseProgram(m_program);

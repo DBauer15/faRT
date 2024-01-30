@@ -13,6 +13,10 @@ struct Buffer {
 
     public: 
         Buffer(GLenum type, GLenum usage = GL_STATIC_DRAW);
+        Buffer(Buffer& other) = delete;
+        Buffer(Buffer&& other);
+        Buffer& operator=(Buffer& other) = delete;
+        Buffer& operator=(Buffer&& other);
         ~Buffer();
 
         template <typename T> void setData(std::vector<T>& data) {
