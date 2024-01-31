@@ -84,7 +84,7 @@ OpenGlRenderer::initTextures() {
                         src_type);
         texture.setData(image.getData(), 
                         GL_LINEAR_MIPMAP_NEAREST, 
-                        GL_LINEAR,
+                        GL_NEAREST,
                         GL_MIRRORED_REPEAT,
                         GL_MIRRORED_REPEAT);
         m_textures.push_back(std::move(texture));

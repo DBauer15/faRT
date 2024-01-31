@@ -37,16 +37,18 @@ bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_in
         // update ray and SurfaceInteraction
         // TODO: This could be moved to somewhere nicer with less divergence
         if (t < ray.t) {
-            //si.n = normalize(cross(edge1, edge2));
             vec3 bary = vec3(1.f - u - v, u, v);
+            si.uv = getUV(first_index, bary);
             si.n = getNormal(first_index, bary);
             si.n = si.n * sign(dot(si.n, -ray.d));
             si.mat = materials[material_id];
-            si.uv = getUV(first_index, bary);
+
+            if (si.mat.base_color_texid >= 0 && texture(u_textures[si.mat.base_color_texid], si.uv).a < EPS) return false;
+
+            ray.t = min( ray.t, t );
+            si.valid = true;
+            return true;
         }
-        ray.t = min( ray.t, t );
-        si.valid = true;
-        return true;
     }
     return false;
 }
