@@ -5,6 +5,7 @@
 
 #include "mesh.h"
 #include "material.h"
+#include "image.h"
 
 // foward declaration for method signatures in Scene
 namespace tinyobj {
@@ -25,6 +26,7 @@ struct Scene {
         
         std::vector<Mesh>& getMeshes() { return m_meshes; }
         std::vector<OpenPBRMaterial>& getMaterials() { return m_materials; }
+        std::vector<Image>& getTextures() { return m_textures; }
 
         float getSceneScale() { return m_scene_scale; }
 
@@ -48,6 +50,7 @@ struct Scene {
 
         std::vector<Mesh> m_meshes;
         std::vector<OpenPBRMaterial> m_materials;
+        std::vector<Image> m_textures;
 
         float m_scene_scale;
 };

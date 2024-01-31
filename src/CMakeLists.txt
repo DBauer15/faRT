@@ -7,6 +7,8 @@ add_executable(fart
     common/app.cpp
     common/camera.h
     common/camera.cpp
+    common/image.h
+    common/image.cpp
     common/mesh.h
     common/scene.h
     common/scene.cpp
@@ -19,7 +21,8 @@ set_target_properties(fart PROPERTIES
     POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(fart PUBLIC 
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+    ${STB_INCLUDE_DIRS})
 
 target_link_libraries(fart PUBLIC
     glfw

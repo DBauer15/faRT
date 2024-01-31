@@ -39,7 +39,7 @@ vec4 closestHit(SurfaceInteraction si) {
         throughput = f * throughput / f_pdf;
 
         Ray ray;
-        ray.o = si.p + 0.000001f * u_scene_scale * si.n;
+        ray.o = si.p + 0.00001f * u_scene_scale * si.n;
         ray.d = si.w_i;
         ray.rD = 1.f / si.w_i;
         ray.t = 1e30f;

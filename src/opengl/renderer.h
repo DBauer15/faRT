@@ -33,6 +33,7 @@ struct OpenGlRenderer : Renderer {
         std::unique_ptr<StorageBuffer> m_vertices;
         std::unique_ptr<StorageBuffer> m_indices;
         std::unique_ptr<StorageBuffer> m_materials;
+        std::vector<Texture> m_textures;
 
         std::unique_ptr<VertexArray> m_vertex_array_pathtracer;
         std::unique_ptr<Shader> m_shader_pathtracer;
@@ -47,6 +48,7 @@ struct OpenGlRenderer : Renderer {
         void initBVH();
         void initFrameBuffer();
         void initBuffers();
+        void initTextures();
         void initShaders();
         void initBindings();
         void initGl();

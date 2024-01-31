@@ -2,14 +2,16 @@
 
 #include <cstdint>
 #include <vector>
-#include "glm/glm.hpp"
+
+#include <glm/glm.hpp>
 
 namespace fart {
 
-struct alignas(16) AligendVertex {
-    glm::vec3 position;
+struct AligendVertex {
+    alignas(16) glm::vec3 position;
+    alignas(16) glm::vec3 normal;
+    alignas(16) glm::vec2 uv;
     uint32_t material_id;
-    glm::vec3 normal;
 };
 
 struct Geometry {

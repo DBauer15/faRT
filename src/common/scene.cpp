@@ -29,7 +29,7 @@ void
 Scene::loadObj(std::string scene) {
 
     tinyobj::ObjReaderConfig reader_config;
-    reader_config.mtl_search_path = scene.substr(0, scene.find_last_of('/'));
+    reader_config.mtl_search_path = scene.substr(0, scene.find_last_of('/')+1);
 
     tinyobj::ObjReader reader;
     if (!reader.ParseFromFile(scene, reader_config)) { 
@@ -63,7 +63,8 @@ Scene::loadObj(std::string scene) {
 
     SUCC("Parsed OBJ file " + scene);
 
-    // Parse materials
+    // Parse materials and textures
+    std::unordered_map<std::string, uint32_t> texture_index_map;
     for (const auto& material : materials) {
         OpenPBRMaterial pbr_mat = OpenPBRMaterial::defaultMaterial();
         pbr_mat.base_color = glm::make_vec3(material.diffuse);
@@ -71,6 +72,23 @@ Scene::loadObj(std::string scene) {
         pbr_mat.specular_ior = material.ior;
         pbr_mat.specular_roughness = std::clamp((1.f - std::log10(material.shininess + 1) / 3.f), 0.01f, 1.f); // TODO: This is not a good approximation of roughness as the Phong shininess is exponential
         
+        if (!material.diffuse_texname.empty()) {
+            if (texture_index_map.find(material.diffuse_texname) != texture_index_map.end()) {
+                pbr_mat.base_color_texid = texture_index_map.at(material.diffuse_texname);
+            } else {
+                std::string texture_filename = reader_config.mtl_search_path + material.diffuse_texname;
+                // TODO: Use std::filesystem::Path
+                std::replace(texture_filename.begin(), texture_filename.end(), '\\', '/');
+                Image diffuse_texture(texture_filename);
+                if (diffuse_texture.isValid()) { 
+                    m_textures.push_back(diffuse_texture);
+                    pbr_mat.base_color_texid = m_textures.size() - 1;
+                    texture_index_map[material.diffuse_texname] = m_textures.size() - 1;
+                    LOG("Read texture image '" + material.diffuse_texname + "'");
+                }
+            }
+        }
+
         LOG("Read material '" + material.name + "'");
         m_materials.push_back(pbr_mat);
     }
@@ -83,7 +101,7 @@ Scene::loadObj(std::string scene) {
         const auto& mesh = shape.mesh;
 
         // TODO: Resolve index tuples here (vertex, normal)     
-        std::map<std::tuple<uint32_t, uint32_t>, uint32_t> index_map; 
+        std::map<std::tuple<uint32_t, uint32_t, uint32_t>, uint32_t> index_map; 
 
         Geometry g;
 
@@ -104,7 +122,7 @@ Scene::loadObj(std::string scene) {
 
                 tinyobj::index_t idx = mesh.indices[3 * f + v]; 
 
-                auto key = std::make_tuple(idx.vertex_index, idx.normal_index);
+                auto key = std::make_tuple(idx.vertex_index, idx.normal_index, idx.texcoord_index);
 
                 uint32_t g_index = 0;
                 if (index_map.find(key) != index_map.end()) {
@@ -119,6 +137,10 @@ Scene::loadObj(std::string scene) {
                     vertex.normal = glm::vec3(attrib.normals[3 * idx.normal_index],
                                               attrib.normals[3 * idx.normal_index + 1],
                                               attrib.normals[3 * idx.normal_index + 2]);
+                    if (attrib.texcoords.size() > 0) {
+                        vertex.uv = glm::vec2(attrib.texcoords[2 * idx.texcoord_index + 0],
+                                              attrib.texcoords[2 * idx.texcoord_index + 1]);
+                    }
                     vertex.material_id = mesh.material_ids[f] < 0 ? m_materials.size() - 1 : mesh.material_ids[f];
 
                     g.vertices.emplace_back(vertex);

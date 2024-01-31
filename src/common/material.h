@@ -8,6 +8,7 @@ struct OpenPBRMaterial {
 
     /* Base */
     alignas(16) glm::vec3   base_color;
+    int32_t     base_color_texid;
     float       base_weight; 
     float       base_roughness;
     float       base_metalness;
@@ -25,6 +26,7 @@ struct OpenPBRMaterial {
         OpenPBRMaterial pbr_mat;
 
         pbr_mat.base_color         = glm::vec3(0.8f, 0.8f, 0.8f);
+        pbr_mat.base_color_texid   = -1;
         pbr_mat.base_weight        = 1.f;
         pbr_mat.base_roughness     = 0.f;
         pbr_mat.base_metalness     = 0.f;

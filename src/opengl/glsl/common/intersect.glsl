@@ -6,6 +6,14 @@ vec3 getNormal(uint first_index, vec3 bary) {
     return normalize(n0 * bary.x + n1 * bary.y + n2 * bary.z);
 }
 
+vec2 getUV(uint first_index, vec3 bary) {
+    vec2 uv0 = vertices[indices[first_index+0]].uv.xy;
+    vec2 uv1 = vertices[indices[first_index+1]].uv.xy;
+    vec2 uv2 = vertices[indices[first_index+2]].uv.xy;
+
+    return uv0 * bary.x + uv1 * bary.y + uv2 * bary.z;
+}
+
 bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_index) {
     uint material_id = vertices[indices[first_index+0]].material_id;
     vec3 v0 = vertices[indices[first_index+0]].position.xyz;
@@ -34,6 +42,7 @@ bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_in
             si.n = getNormal(first_index, bary);
             si.n = si.n * sign(dot(si.n, -ray.d));
             si.mat = materials[material_id];
+            si.uv = getUV(first_index, bary);
         }
         ray.t = min( ray.t, t );
         si.valid = true;

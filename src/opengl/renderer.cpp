@@ -14,6 +14,7 @@ OpenGlRenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &win
     initBVH();
     initFrameBuffer();
     initBuffers();
+    initTextures();
     initShaders();
     initBindings();
 }
@@ -65,6 +66,29 @@ OpenGlRenderer::initBuffers() {
         -1.f,  1.f, 0.0f   // top left
     };
     m_quad->setData(quad);
+}
+
+void
+OpenGlRenderer::initTextures() {
+    for (auto& image : m_scene->getTextures()) {
+        if (m_textures.size() >= 63) {
+            WARN("Maximum supported number of textures (63) reached, skipping the rest");
+            break;
+        }
+        GLenum format = image.getChannels() == 4 ? GL_RGBA : GL_RGB;
+        GLenum src_type = GL_UNSIGNED_BYTE;
+        Texture texture(image.getWidth(),
+                        image.getHeight(),
+                        GL_RGBA,
+                        GL_RGBA,
+                        src_type);
+        texture.setData(image.getData(), 
+                        GL_LINEAR_MIPMAP_NEAREST, 
+                        GL_LINEAR,
+                        GL_MIRRORED_REPEAT,
+                        GL_MIRRORED_REPEAT);
+        m_textures.push_back(std::move(texture));
+    }
 }
 
 void
@@ -161,9 +185,15 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
         m_shader_pathtracer->setFloat3("u_camera.eye", glm::value_ptr(eye));
         m_shader_pathtracer->setFloat3("u_camera.dir", glm::value_ptr(dir));
         m_shader_pathtracer->setFloat3("u_camera.up", glm::value_ptr(up));
-        m_accum_texture1->activate(GL_TEXTURE0);
+        int u_frag_color_accum_pos = 63;
+        m_accum_texture1->activate(GL_TEXTURE0 + u_frag_color_accum_pos);
         m_accum_texture1->bind();
-        m_shader_pathtracer->setUInt("u_frag_color_accum", 0);
+        m_shader_pathtracer->setInt("u_frag_color_accum", &u_frag_color_accum_pos);
+        for (int i = 0; i < m_textures.size(); i++) {
+            m_textures[i].activate(GL_TEXTURE0 + i);
+            m_textures[i].bind();
+            m_shader_pathtracer->setInt("u_textures[" + std::to_string(i) + "]", &i);
+        }
 
         m_vertex_array_pathtracer->bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -176,9 +206,10 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
 
     { // Postprocessing renderpass
         m_shader_postprocess->use();
-        m_accum_texture0->activate(GL_TEXTURE0);
+        int u_frag_color_accum_pos = 63;
+        m_accum_texture0->activate(GL_TEXTURE0 + u_frag_color_accum_pos);
         m_accum_texture0->bind();
-        m_shader_postprocess->setUInt("u_frag_color_accum", 0);
+        m_shader_postprocess->setInt("u_frag_color_accum", &u_frag_color_accum_pos);
 
         m_vertex_array_postprocess->bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);

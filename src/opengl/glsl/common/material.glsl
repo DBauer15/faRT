@@ -82,14 +82,19 @@ vec3 sample_diffuse(SurfaceInteraction si, RNG rng) {
 }
 
 vec3 eval_diffuse(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
-    return si.mat.base_weight * si.mat.base_color * dot(w_i, si.n) * ONE_OVER_PI;
+    vec3 f = si.mat.base_color;
+    if (si.mat.base_color_texid >= 0)
+        f = texture(u_textures[si.mat.base_color_texid], si.uv).rgb;
+    f *= si.mat.base_weight * dot(w_i, si.n) * ONE_OVER_PI;
+    return f;
 }
 
+/* Compound PBR Model */
 vec3 eval_glossy_diffuse(SurfaceInteraction si, vec3 w_i, vec3 w_o, RNG rng) {
     // Compute reflectance estimate for albedo scaling
-    //vec3 E_glossy = ggx_reflectance(si, w_o, rng);
-    //return (1.f - E_glossy) * eval_diffuse(si, w_i, w_o) + eval_glossy(si, w_i, w_o);
-    return eval_diffuse(si, w_i, w_o) + eval_glossy(si, w_i, w_o);
+    vec3 E_glossy = ggx_reflectance(si, w_o, rng);
+    return (1.f - E_glossy) * eval_diffuse(si, w_i, w_o) + eval_glossy(si, w_i, w_o);
+    //return eval_diffuse(si, w_i, w_o) + eval_glossy(si, w_i, w_o);
 }
 
 

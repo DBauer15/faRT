@@ -1,7 +1,8 @@
 struct Vertex {
     vec3 position;
-    uint material_id;
     vec3 normal;
+    vec2 uv;
+    uint material_id;
 };
 
 struct Camera {
@@ -19,6 +20,7 @@ struct Ray {
 
 struct OpenPBRMaterial {
     vec3  base_color;
+    int   base_color_texid;
     float base_weight;
     float base_roughness;
     float base_metalness;
@@ -36,6 +38,7 @@ struct SurfaceInteraction {
     vec3 n;
     vec3 w_i;
     vec3 w_o;
+    vec2 uv;
     OpenPBRMaterial mat;
     bool valid;
 };

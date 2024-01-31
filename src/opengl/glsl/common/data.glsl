@@ -4,6 +4,8 @@ uniform uvec2 u_viewport_size;
 uniform float u_aspect_ratio;
 uniform Camera u_camera;
 
+uniform sampler2D u_textures[31];
+
 layout(std430, binding = 0) buffer geometry0 {
     Vertex vertices [];
 };
