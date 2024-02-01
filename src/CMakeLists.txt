@@ -22,11 +22,13 @@ set_target_properties(fart PROPERTIES
 
 target_include_directories(fart PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
-    ${STB_INCLUDE_DIRS})
+    ${STB_INCLUDE_DIR}
+    ${PBRT_PARSER_INCLUDE_DIR})
 
 target_link_libraries(fart PUBLIC
     glfw
     tinyobjloader
+    pbrtParser
     glm::glm
     )
 
