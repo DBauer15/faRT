@@ -20,9 +20,15 @@ struct Geometry {
         std::vector<uint32_t> indices;
 };
 
-struct Mesh {
+struct Object {
     public:
         std::vector<Geometry> geometries;
+};
+
+struct ObjectInstance {
+    public:
+        glm::mat4 world_to_instance;
+        uint32_t object_id;
 };
 
 }

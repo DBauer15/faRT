@@ -21,7 +21,7 @@ OpenGlRenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &win
 
 void
 OpenGlRenderer::initBVH() {
-    m_bvh = std::make_unique<BVH>(m_scene->getMeshes()[0].geometries);
+    m_bvh = std::make_unique<BVH>(m_scene->getObjects()[0].geometries);
 }
 
 void

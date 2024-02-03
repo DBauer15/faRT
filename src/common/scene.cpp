@@ -12,17 +12,24 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
+#include <pbrtParser/Scene.h>
+
 namespace fart {
 
 Scene::Scene(std::string scene) {
     std::string extension = scene.substr(scene.find_last_of(".") + 1);
     if (extension == "obj") {
         loadObj(scene);
-    } else 
-        throw std::runtime_error("Unexpected file format " + extension);
+    } else if (extension == "pbrt") {
+        loadPBRT(scene);
+    } else {
+        ERR("Unexpected file format " + extension);
+        return;
+    }
 
     updateSceneScale();
-    SUCC("Finished loading " + std::to_string(m_meshes.size()) + " meshes."); 
+    LOG("SceneScale: " + std::to_string(m_scene_scale));
+    SUCC("Finished loading " + std::to_string(m_objects.size()) + " objects."); 
 }
 
 void
@@ -96,7 +103,7 @@ Scene::loadObj(std::string scene) {
     m_materials.push_back(OpenPBRMaterial::defaultMaterial());
 
     // Parse meshes
-    Mesh m;
+    Object obj;
     for (const auto& shape : shapes) {
         const auto& mesh = shape.mesh;
 
@@ -151,9 +158,9 @@ Scene::loadObj(std::string scene) {
             }
         }
         LOG("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ")");
-        m.geometries.push_back(g);
+        obj.geometries.push_back(g);
     }
-    m_meshes.push_back(m);
+    m_objects.push_back(obj);
 }
 
 /*
@@ -304,8 +311,8 @@ Scene::updateSceneScale() {
     float min_vertex = 1e30f;
     float max_vertex = -1e30f;
 
-    for (auto& mesh : m_meshes) {
-        for (auto& geometry : mesh.geometries) {
+    for (auto& object : m_objects) {
+        for (auto& geometry : object.geometries) {
             min_vertex = std::min(min_vertex, glm::compMin(std::min_element(geometry.vertices.begin(), geometry.vertices.end(),
                             [](auto v0, auto v1) {
                                 return glm::compMin(v0.position) < glm::compMin(v1.position);
@@ -321,4 +328,159 @@ Scene::updateSceneScale() {
     m_scene_scale = max_vertex - min_vertex;
 }
 
+void
+Scene::loadPBRT(std::string scene) {
+
+    std::shared_ptr<pbrt::Scene> pbrt_scene;
+    pbrt_scene = pbrt::importPBRT(scene);
+
+    // Flatten the scene
+    pbrt_scene->makeSingleLevel();
+    LOG("Flattened PBRT scene graph");
+
+    // Add a default material for faces that do not have a material id
+    m_materials.push_back(OpenPBRMaterial::defaultMaterial());
+
+    Object obj;
+    // Import meshes
+    // TODO: Resolve instances and don't replicate vertices and materials
+    uint32_t n_geometries_processed = 0;
+    for (auto& instance : pbrt_scene->world->instances) {
+        for (auto& shape : instance->object->shapes) {
+            // Non-triangle shapes are not supported
+            pbrt::TriangleMesh::SP mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(shape);
+            if (!mesh) continue;
+
+            uint32_t material_id = 0;
+            OpenPBRMaterial pbr_material = OpenPBRMaterial::defaultMaterial();
+            if (loadPBRTMaterial(mesh->material, pbr_material)) {
+                m_materials.push_back(pbr_material);
+                material_id = m_materials.size() - 1;
+                LOG("Parsed material '" + mesh->material->name + "'");
+            }
+
+            Geometry g;
+            uint32_t g_n_idx_cnt = 0;
+
+            for (auto& index : mesh->index) {
+                for (int i = 0; i < 3; i++) {
+                    AligendVertex vertex;
+                    auto position = mesh->vertex[*(&index.x + i)];
+                    vertex.position = glm::vec3(position.x, position.y, position.z);
+
+                    if (mesh->normal.size() > 0) {
+                        auto normal = mesh->normal[*(&index.x + i)];
+                        vertex.normal = glm::vec3(normal.x, normal.y, normal.z);
+                    } else {
+                        const auto& v0 = glm::make_vec3(&mesh->vertex[index.x].x);
+                        const auto& v1 = glm::make_vec3(&mesh->vertex[index.y].x);
+                        const auto& v2 = glm::make_vec3(&mesh->vertex[index.z].x);
+                        vertex.normal = glm::normalize(glm::cross((v1 - v0), (v2 - v0)));
+                    }
+
+                    if (mesh->texcoord.size() > 0) {
+                        auto uv = mesh->texcoord[*(&index.x + i)];
+                        vertex.uv = glm::vec2(uv.x, uv.y);
+                    }
+
+                    vertex.material_id = material_id;
+                    g.vertices.emplace_back(vertex);
+                    g.indices.emplace_back(g_n_idx_cnt++);
+                }
+            }
+            obj.geometries.push_back(g);
+            n_geometries_processed++;
+            LOG("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ")");
+        }
+    }
+    m_objects.push_back(obj);
+}
+
+bool 
+Scene::loadPBRTMaterial(std::shared_ptr<pbrt::Material> material, OpenPBRMaterial& pbr_material) {
+    if (std::dynamic_pointer_cast<pbrt::DisneyMaterial>(material))
+        return loadPBRTMaterialDisney(*std::dynamic_pointer_cast<pbrt::DisneyMaterial>(material), pbr_material);
+    else if (std::dynamic_pointer_cast<pbrt::MixMaterial>(material))
+        return loadPBRTMaterialMixMaterial(*std::dynamic_pointer_cast<pbrt::MixMaterial>(material), pbr_material);
+    else if (std::dynamic_pointer_cast<pbrt::MetalMaterial>(material))
+        return loadPBRTMaterialMetal(*std::dynamic_pointer_cast<pbrt::MetalMaterial>(material), pbr_material);
+    else if (std::dynamic_pointer_cast<pbrt::TranslucentMaterial>(material))
+        return loadPBRTMaterialTranslucent(*std::dynamic_pointer_cast<pbrt::TranslucentMaterial>(material), pbr_material);
+    else if (std::dynamic_pointer_cast<pbrt::PlasticMaterial>(material))
+        return loadPBRTMaterialPlastic(*std::dynamic_pointer_cast<pbrt::PlasticMaterial>(material), pbr_material);
+    else if (std::dynamic_pointer_cast<pbrt::SubSurfaceMaterial>(material))
+        return loadPBRTMaterialSubSurface(*std::dynamic_pointer_cast<pbrt::SubSurfaceMaterial>(material), pbr_material);
+    else if (std::dynamic_pointer_cast<pbrt::MirrorMaterial>(material))
+        return loadPBRTMaterialMirror(*std::dynamic_pointer_cast<pbrt::MirrorMaterial>(material), pbr_material);
+    else if (std::dynamic_pointer_cast<pbrt::MatteMaterial>(material))
+        return loadPBRTMaterialMatte(*std::dynamic_pointer_cast<pbrt::MatteMaterial>(material), pbr_material);
+    else if (std::dynamic_pointer_cast<pbrt::GlassMaterial>(material))
+        return loadPBRTMaterialGlass(*std::dynamic_pointer_cast<pbrt::GlassMaterial>(material), pbr_material);
+    else if (std::dynamic_pointer_cast<pbrt::UberMaterial>(material))
+        return loadPBRTMaterialUber(*std::dynamic_pointer_cast<pbrt::UberMaterial>(material), pbr_material);
+    else
+        return false;
+}
+
+bool 
+Scene::loadPBRTMaterialDisney(pbrt::DisneyMaterial& material, OpenPBRMaterial& pbr_material) {
+    return false;
+}
+
+bool 
+Scene::loadPBRTMaterialMixMaterial(pbrt::MixMaterial& material, OpenPBRMaterial& pbr_material) {
+    return false;
+}
+
+bool 
+Scene::loadPBRTMaterialMetal(pbrt::MetalMaterial& material, OpenPBRMaterial& pbr_material) {
+    return false;
+}
+
+bool 
+Scene::loadPBRTMaterialTranslucent(pbrt::TranslucentMaterial& material, OpenPBRMaterial& pbr_material) {
+    return false;
+}
+
+bool 
+Scene::loadPBRTMaterialPlastic(pbrt::PlasticMaterial& material, OpenPBRMaterial& pbr_material) {
+    pbr_material.base_color = glm::make_vec3(&material.kd.x);
+    pbr_material.specular_color = glm::make_vec3(&material.ks.x);
+    if (material.remapRoughness) {
+        float roughness = std::max(material.roughness, 1e-3f);
+        float x = std::log(roughness);
+        pbr_material.specular_roughness = 1.62142f + 0.819955f * x + 0.1734f * x * x +
+               0.0171201f * x * x * x + 0.000640711f * x * x * x * x;
+    } else {
+        pbr_material.specular_roughness = material.roughness;
+    }
+    return true;
+}
+
+bool 
+Scene::loadPBRTMaterialSubSurface(pbrt::SubSurfaceMaterial& material, OpenPBRMaterial& pbr_material) {
+    return false;
+}
+
+bool 
+Scene::loadPBRTMaterialMirror(pbrt::MirrorMaterial& material, OpenPBRMaterial& pbr_material) {
+    return false;
+}
+
+bool 
+Scene::loadPBRTMaterialMatte(pbrt::MatteMaterial& material, OpenPBRMaterial& pbr_material) {
+    pbr_material.base_color = glm::make_vec3(&material.kd.x);
+    pbr_material.specular_roughness = 1.f;
+    return true;
+}
+
+bool 
+Scene::loadPBRTMaterialGlass(pbrt::GlassMaterial& material, OpenPBRMaterial& pbr_material) {
+    return false;
+}
+
+bool 
+Scene::loadPBRTMaterialUber(pbrt::UberMaterial& material, OpenPBRMaterial& pbr_material) {
+    return false;
+}
 }

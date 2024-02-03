@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <string>
+#include <memory>
+
 
 #include "mesh.h"
 #include "material.h"
@@ -11,6 +13,20 @@
 namespace tinyobj {
     struct attrib_t;
     struct shape_t;
+}
+
+namespace pbrt {
+    struct Material;
+    struct DisneyMaterial;
+    struct MixMaterial;
+    struct MetalMaterial;
+    struct TranslucentMaterial;
+    struct PlasticMaterial;
+    struct SubSurfaceMaterial;
+    struct MirrorMaterial;
+    struct MatteMaterial;
+    struct GlassMaterial;
+    struct UberMaterial;
 }
 
 namespace fart {
@@ -24,7 +40,7 @@ struct Scene {
         Scene(const Scene &) = delete;
         Scene &operator=(const Scene &) = delete;
         
-        std::vector<Mesh>& getMeshes() { return m_meshes; }
+        std::vector<Object>& getObjects() { return m_objects; }
         std::vector<OpenPBRMaterial>& getMaterials() { return m_materials; }
         std::vector<Image>& getTextures() { return m_textures; }
 
@@ -45,10 +61,26 @@ struct Scene {
         void computeAllSmoothingNormals(tinyobj::attrib_t& attrib,
                                         std::vector<tinyobj::shape_t>& shapes);
 
+        /* PBRT Parsing */
+        void loadPBRT(std::string scene);
+        bool loadPBRTMaterial(std::shared_ptr<pbrt::Material> material, OpenPBRMaterial& pbr_material);
+        bool loadPBRTMaterialDisney(pbrt::DisneyMaterial& material, OpenPBRMaterial& pbr_material);
+        bool loadPBRTMaterialMixMaterial(pbrt::MixMaterial& material, OpenPBRMaterial& pbr_material);
+        bool loadPBRTMaterialMetal(pbrt::MetalMaterial& material, OpenPBRMaterial& pbr_material);
+        bool loadPBRTMaterialTranslucent(pbrt::TranslucentMaterial& material, OpenPBRMaterial& pbr_material);
+        bool loadPBRTMaterialPlastic(pbrt::PlasticMaterial& material, OpenPBRMaterial& pbr_material);
+        bool loadPBRTMaterialSubSurface(pbrt::SubSurfaceMaterial& material, OpenPBRMaterial& pbr_material);
+        bool loadPBRTMaterialMirror(pbrt::MirrorMaterial& material, OpenPBRMaterial& pbr_material);
+        bool loadPBRTMaterialMatte(pbrt::MatteMaterial& material, OpenPBRMaterial& pbr_material);
+        bool loadPBRTMaterialGlass(pbrt::GlassMaterial& material, OpenPBRMaterial& pbr_material);
+        bool loadPBRTMaterialUber(pbrt::UberMaterial& material, OpenPBRMaterial& pbr_material);
 
+        /* Utility Functions */
         void updateSceneScale();
 
-        std::vector<Mesh> m_meshes;
+        /* Scene Data */
+        std::vector<Object> m_objects;
+        std::vector<ObjectInstance> m_instances;
         std::vector<OpenPBRMaterial> m_materials;
         std::vector<Image> m_textures;
 
