@@ -160,12 +160,12 @@ BVH::splitEqual(uint32_t node_idx, float& split_pos, uint32_t& axis) {
 bool
 BVH::splitSAH(uint32_t node_idx, float& split_pos, uint32_t& axis) {
 
-    const BVHNode& node = m_bvh_nodes[node_idx];
+    BVHNode& node = m_bvh_nodes[node_idx];
     const glm::vec3 node_extent = node.aabb.extent();
     if (node.tri_count <= 4) return false;
 
-    constexpr int n_buckets = 12;
-    constexpr int n_splits = n_buckets - 1;
+    const int n_buckets = 12;
+    const int n_splits = n_buckets - 1;
 
     int min_cost_split_bucket = -1;
     uint32_t min_split_axis = 0;
@@ -173,7 +173,7 @@ BVH::splitSAH(uint32_t node_idx, float& split_pos, uint32_t& axis) {
 
     for (size_t ax = 0; ax < 3; ax++) {
         if (node_extent[ax] <= 0.f) continue;
-        BVHSplitBucket buckets[n_buckets];
+        std::vector<BVHSplitBucket> buckets (n_buckets);
 
         for (uint32_t i = node.first_tri_index_id; i < node.first_tri_index_id + 3 * node.tri_count; i+=3) {
             int b = n_buckets * ((m_centroids[i/3][ax] - node.aabb.min[ax]) / node_extent[ax]);
@@ -184,7 +184,7 @@ BVH::splitSAH(uint32_t node_idx, float& split_pos, uint32_t& axis) {
             buckets[b].bounds.extend(m_vertices[m_indices[i+2]].position);
         }
 
-        float costs[n_splits] = {};
+        std::vector<float> costs (n_splits);
         int count_below = 0;
         AABB bound_below;
         for (int i = 0; i < n_splits; i++) {
