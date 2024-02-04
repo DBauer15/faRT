@@ -10,8 +10,8 @@
 namespace fart {
 
 struct BVHSplitBucket {
-    int count = 0;
     AABB bounds;
+    uint32_t count { 0 };
 };
 
 struct BVHNode {
