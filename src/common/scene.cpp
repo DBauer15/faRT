@@ -101,10 +101,10 @@ Scene::loadObj(std::string scene) {
     // Add a default material for faces that do not have a material id
     m_materials.push_back(OpenPBRMaterial::defaultMaterial());
 
+    Object obj;
     // Parse meshes
     for (const auto& shape : shapes) {
         const auto& mesh = shape.mesh;
-        Object obj;
 
         // TODO: Resolve index tuples here (vertex, normal)     
         std::map<std::tuple<uint32_t, uint32_t, uint32_t>, uint32_t> index_map; 
@@ -158,16 +158,14 @@ Scene::loadObj(std::string scene) {
         }
         LOG("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ")");
         obj.geometries.push_back(g);
-        m_objects.push_back(obj);
     }
+    m_objects.push_back(obj);
 
     // OBJ does not support instancing, so each object has one instance
     for (uint32_t i = 0; i < m_objects.size(); i++) {
         ObjectInstance instance;
         instance.object_id = i;
         instance.world_to_instance = glm::inverse(glm::mat4(1.f));
-        if (i >= 1) 
-            instance.world_to_instance = glm::inverse(glm::rotate(instance.world_to_instance, 45.f, glm::vec3(0, 1, 0)));
         m_instances.push_back(instance);
     }
 }
