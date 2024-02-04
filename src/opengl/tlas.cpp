@@ -18,6 +18,12 @@ TLAS::build() {
     WARN("Building TLAS");
     auto t_start = std::chrono::high_resolution_clock::now();
 
+    if (m_bvhs.size() == 0 || m_instances.size() == 0) {
+        m_tlas_nodes.resize( 1 );
+        m_tlas_nodes[0].left_right = 0;
+        return;
+    }
+
     size_t N = m_instances.size();
     m_nodes_used = 1;
     m_tlas_nodes.resize( N * 2 );

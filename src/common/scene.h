@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <map>
 #include <string>
 #include <memory>
 
@@ -16,6 +17,8 @@ namespace tinyobj {
 }
 
 namespace pbrt {
+    struct Object;
+    struct Instance;
     struct Material;
     struct DisneyMaterial;
     struct MixMaterial;
@@ -64,6 +67,9 @@ struct Scene {
 
         /* PBRT Parsing */
         void loadPBRT(std::string scene);
+        void loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current, std::map<std::shared_ptr<pbrt::Object>, uint32_t>& object_map);
+        void loadPBRTInstancesRecursive(std::shared_ptr<pbrt::Instance> current, const std::map<std::shared_ptr<pbrt::Object>, uint32_t>& object_map);
+
         bool loadPBRTMaterial(std::shared_ptr<pbrt::Material> material, OpenPBRMaterial& pbr_material);
         bool loadPBRTMaterialDisney(pbrt::DisneyMaterial& material, OpenPBRMaterial& pbr_material);
         bool loadPBRTMaterialMixMaterial(pbrt::MixMaterial& material, OpenPBRMaterial& pbr_material);

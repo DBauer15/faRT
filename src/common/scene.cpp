@@ -28,8 +28,7 @@ Scene::Scene(std::string scene) {
     }
 
     updateSceneScale();
-    LOG("SceneScale: " + std::to_string(m_scene_scale));
-    SUCC("Finished loading " + std::to_string(m_objects.size()) + " objects."); 
+    SUCC("Finished loading " + std::to_string(m_objects.size()) + " objects and " + std::to_string(m_instances.size()) + " instances."); 
 }
 
 void
@@ -342,66 +341,101 @@ Scene::loadPBRT(std::string scene) {
     std::shared_ptr<pbrt::Scene> pbrt_scene;
     pbrt_scene = pbrt::importPBRT(scene);
 
-    // Flatten the scene
-    pbrt_scene->makeSingleLevel();
-    LOG("Flattened PBRT scene graph");
-
     // Add a default material for faces that do not have a material id
     m_materials.push_back(OpenPBRMaterial::defaultMaterial());
 
-    Object obj;
-    // Import meshes
-    // TODO: Resolve instances and don't replicate vertices and materials
-    uint32_t n_geometries_processed = 0;
-    for (auto& instance : pbrt_scene->world->instances) {
-        for (auto& shape : instance->object->shapes) {
-            // Non-triangle shapes are not supported
-            pbrt::TriangleMesh::SP mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(shape);
-            if (!mesh) continue;
+    // Import objects
+    std::map<std::shared_ptr<pbrt::Object>, uint32_t> object_map;
+    loadPBRTObjectsRecursive(pbrt_scene->world, object_map);
 
-            uint32_t material_id = 0;
-            OpenPBRMaterial pbr_material = OpenPBRMaterial::defaultMaterial();
-            if (loadPBRTMaterial(mesh->material, pbr_material)) {
-                m_materials.push_back(pbr_material);
-                material_id = m_materials.size() - 1;
-                LOG("Parsed material '" + mesh->material->name + "'");
-            }
-
-            Geometry g;
-            uint32_t g_n_idx_cnt = 0;
-
-            for (auto& index : mesh->index) {
-                for (int i = 0; i < 3; i++) {
-                    AligendVertex vertex;
-                    auto position = mesh->vertex[*(&index.x + i)];
-                    vertex.position = glm::vec3(position.x, position.y, position.z);
-
-                    if (mesh->normal.size() > 0) {
-                        auto normal = mesh->normal[*(&index.x + i)];
-                        vertex.normal = glm::vec3(normal.x, normal.y, normal.z);
-                    } else {
-                        const auto& v0 = glm::make_vec3(&mesh->vertex[index.x].x);
-                        const auto& v1 = glm::make_vec3(&mesh->vertex[index.y].x);
-                        const auto& v2 = glm::make_vec3(&mesh->vertex[index.z].x);
-                        vertex.normal = glm::normalize(glm::cross((v1 - v0), (v2 - v0)));
-                    }
-
-                    if (mesh->texcoord.size() > 0) {
-                        auto uv = mesh->texcoord[*(&index.x + i)];
-                        vertex.uv = glm::vec2(uv.x, uv.y);
-                    }
-
-                    vertex.material_id = material_id;
-                    g.vertices.emplace_back(vertex);
-                    g.indices.emplace_back(g_n_idx_cnt++);
-                }
-            }
-            obj.geometries.push_back(g);
-            n_geometries_processed++;
-            LOG("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ")");
-        }
+    // Import instances
+    for(auto& instance : pbrt_scene->world->instances)
+        loadPBRTInstancesRecursive(instance, object_map);
+    if (m_instances.size() == 0 && m_objects.size() > 0) {
+        ObjectInstance root;
+        root.object_id = 0;
+        root.world_to_instance = glm::mat4(1.f);
+        m_instances.push_back(root);
+        WARN("No instance data found, adding default instance");
     }
-    m_objects.push_back(obj);
+}
+
+void
+Scene::loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current, std::map<std::shared_ptr<pbrt::Object>, uint32_t>& object_map) {
+    if (!current || object_map.find(current) != object_map.end()) return;
+
+    Object obj;
+    for (auto& shape : current->shapes) {
+        // Non-triangle shapes are not supported
+        pbrt::TriangleMesh::SP mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(shape);
+        if (!mesh) continue;
+
+        uint32_t material_id = 0;
+        OpenPBRMaterial pbr_material = OpenPBRMaterial::defaultMaterial();
+        if (loadPBRTMaterial(mesh->material, pbr_material)) {
+            m_materials.push_back(pbr_material);
+            material_id = m_materials.size() - 1;
+            LOG("Parsed material '" + mesh->material->name + "'");
+        }
+
+        Geometry g;
+        uint32_t g_n_idx_cnt = 0;
+
+        for (auto& index : mesh->index) {
+            for (int i = 0; i < 3; i++) {
+                AligendVertex vertex;
+                auto position = mesh->vertex[*(&index.x + i)];
+                vertex.position = glm::vec3(position.x, position.y, position.z);
+
+                if (mesh->normal.size() > 0) {
+                    auto normal = mesh->normal[*(&index.x + i)];
+                    vertex.normal = glm::vec3(normal.x, normal.y, normal.z);
+                } else {
+                    const auto& v0 = glm::make_vec3(&mesh->vertex[index.x].x);
+                    const auto& v1 = glm::make_vec3(&mesh->vertex[index.y].x);
+                    const auto& v2 = glm::make_vec3(&mesh->vertex[index.z].x);
+                    vertex.normal = glm::normalize(glm::cross((v1 - v0), (v2 - v0)));
+                }
+
+                if (mesh->texcoord.size() > 0) {
+                    auto uv = mesh->texcoord[*(&index.x + i)];
+                    vertex.uv = glm::vec2(uv.x, uv.y);
+                }
+
+                vertex.material_id = material_id;
+                g.vertices.emplace_back(vertex);
+                g.indices.emplace_back(g_n_idx_cnt++);
+            }
+        }
+        obj.geometries.push_back(g);
+        LOG("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ")");
+    }
+
+    if (obj.geometries.size() > 0) {
+        object_map[current] = m_objects.size();
+        m_objects.push_back(obj);
+    }
+
+    for (auto& instance : current->instances) {
+        loadPBRTObjectsRecursive(instance->object, object_map);
+    }
+}
+
+void
+Scene::loadPBRTInstancesRecursive(std::shared_ptr<pbrt::Instance> current, const std::map<std::shared_ptr<pbrt::Object>, uint32_t>& object_map) {
+    if (!current->object) return;
+
+    if (object_map.find(current->object) != object_map.end()) {
+        ObjectInstance instance;
+        instance.object_id = object_map.at(current->object);
+        instance.world_to_instance = glm::make_mat4(&current->xfm.l.vx.x);
+        m_instances.push_back(instance);
+        LOG("Loaded instance of '" + current->object->name + "'");
+    }
+
+    for (auto& instance : current->object->instances) {
+        loadPBRTInstancesRecursive(instance, object_map);
+    }
 }
 
 bool 

@@ -20,6 +20,11 @@ struct Buffer {
         ~Buffer();
 
         template <typename T> void setData(std::vector<T>& data) {
+            if (data.size() == 0) {
+                m_n_elements = 0;
+                m_size = 0;
+                return;
+            }
             bind();
             GLsizei size = sizeof(T) * data.size(); 
             glBufferData(m_type, size, data.data(), m_usage);
@@ -29,6 +34,11 @@ struct Buffer {
             m_size = size;
         }
         template <typename T> void setData(T* data, size_t n_elements) {
+            if (n_elements == 0) {
+                m_n_elements = 0;
+                m_size = 0;
+                return;
+            }
             bind();
             GLsizei size = sizeof(T) * n_elements;
             glBufferData(m_type, size, data, m_usage);
