@@ -93,12 +93,14 @@ OpenGlRenderer::initBuffers() {
     m_indices = std::make_unique<StorageBuffer>(1);
     m_blas_buffer = std::make_unique<StorageBuffer>(2);
     m_tlas_buffer = std::make_unique<StorageBuffer>(3);
-    m_materials = std::make_unique<StorageBuffer>(4);
+    m_instance_buffer = std::make_unique<StorageBuffer>(4);
+    m_materials = std::make_unique<StorageBuffer>(5);
 
     m_vertices->setData(m_vertices_contiguous);
     m_indices->setData(m_indices_contiguous);
     m_blas_buffer->setData(m_blas_list);
     m_tlas_buffer->setData(m_tlas->getNodes().data(), m_tlas->getNodesUsed());
+    m_instance_buffer->setData(m_scene->getInstances());
     m_materials->setData(m_scene->getMaterials());
 
     std::vector<float> quad {
@@ -159,6 +161,7 @@ OpenGlRenderer::initBindings() {
     m_indices->bind();
     m_blas_buffer->bind();
     m_tlas_buffer->bind();
+    m_instance_buffer->bind();
     m_vertex_array_pathtracer->addVertexAttribute(/*shader=*/*m_shader_pathtracer.get(), 
                                        /*attribute_name=*/"a_position", 
                                        /*size=*/3, 
@@ -170,6 +173,7 @@ OpenGlRenderer::initBindings() {
     m_indices->unbind();
     m_blas_buffer->unbind();
     m_tlas_buffer->unbind();
+    m_instance_buffer->unbind();
 
     m_vertex_array_postprocess = std::make_unique<VertexArray>();
     m_vertex_array_postprocess->bind();

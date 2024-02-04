@@ -10,7 +10,9 @@ namespace fart {
 struct TLASNode {
     AABB aabb;
     uint32_t blas;
-    uint32_t left_right { 0 };
+    uint32_t instance;
+    uint32_t left { 0 };
+    uint32_t right { 0 };
 };
 
 struct TLAS {

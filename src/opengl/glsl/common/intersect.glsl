@@ -43,12 +43,15 @@ bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_in
             vec3 face_normal = normalize(cross(edge1, edge2));
             vec3 vertex_normal = getNormal(first_index, bary);
             vertex_normal = vertex_normal * (dot(face_normal, -ray.d) < 0.f ? -1.f : 1.f);
+            face_normal = face_normal * (dot(face_normal, -ray.d) < 0.f ? -1.f : 1.f);
 
             if (mat.base_color_texid >= 0 && texture(u_textures[mat.base_color_texid], uv).a == 0.f) return false;
             si.uv = uv;
-            si.n = vertex_normal;
+            si.n = face_normal;
             si.mat = mat;
             ray.t = min( ray.t, t );
+
+            si.w_o = normalize(-ray.d);
             si.valid = true;
             return true;
         }
@@ -68,7 +71,7 @@ float intersectAABB(Ray ray, vec3 bmin, vec3 bmax) {
     return 1e30f; 
 }
 
-SurfaceInteraction intersectBLAS(inout Ray ray, inout SurfaceInteraction si, uint bvh_offset) {
+void intersectBLAS(inout Ray ray, inout SurfaceInteraction si, uint bvh_offset) {
     uint stack[32];
     int current = 0;
     stack[current] = bvh_offset;
@@ -96,37 +99,43 @@ SurfaceInteraction intersectBLAS(inout Ray ray, inout SurfaceInteraction si, uin
         
     } while(current >= 0 && current < 32);
 
-    si.p = ray.o + ray.d * ray.t;
-    si.w_o = -ray.d;
-    
-    return si;
 }
 
 SurfaceInteraction intersect(Ray ray) {
     SurfaceInteraction si;
     si.valid = false;
 
-    uint stack[16];
+    uint stack[32];
     int current = 0;
     stack[current] = 0;
 
     do {
         TLASNode node = tlas[stack[current--]];
-        if (node.left_right == 0) {
+        if (node.left == 0 && node.right == 0) {
+            Ray ray_backup = ray;
+            mat4 xfm = instances[node.instance].world_to_instance;
+            ray.o = vec3(xfm * vec4(ray.o, 1));
+            ray.d = vec3(xfm * vec4(ray.d, 0));
+            ray.rD = 1.f / ray.d;
+
             intersectBLAS(ray, si, node.blas);
+            ray_backup.t = ray.t;
+            ray = ray_backup;
+
         } else {
-            float left_dist = intersectAABB(ray, tlas[node.left_right >> 16].aabb_min.xyz, tlas[node.left_right >> 16].aabb_max.xyz);
-            float right_dist = intersectAABB(ray, tlas[node.left_right & 0xFFFF].aabb_min.xyz, tlas[node.left_right & 0xFFFF].aabb_max.xyz);
+            float left_dist = intersectAABB(ray, tlas[node.left].aabb_min.xyz, tlas[node.left].aabb_max.xyz);
+            float right_dist = intersectAABB(ray, tlas[node.right].aabb_min.xyz, tlas[node.right].aabb_max.xyz);
 
             if (left_dist > right_dist) {
-                if (left_dist < 1e30f) stack[++current] = node.left_right >> 16;
-                if (right_dist < 1e30f) stack[++current] = node.left_right & 0xFFFF;
+                if (left_dist < 1e30f) stack[++current] = node.left;
+                if (right_dist < 1e30f) stack[++current] = node.right;
             } else {
-                if (right_dist < 1e30f) stack[++current] = node.left_right & 0xFFFF;
-                if (left_dist < 1e30f) stack[++current] = node.left_right >> 16;
+                if (right_dist < 1e30f) stack[++current] = node.right;
+                if (left_dist < 1e30f) stack[++current] = node.left;
             }
         }
-    } while (current >= 0 && current < 16);
+    } while (current >= 0 && current < 32);
 
+    si.p = ray.o + ray.d * ray.t;
     return si;
 }

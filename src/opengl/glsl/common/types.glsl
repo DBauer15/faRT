@@ -56,7 +56,14 @@ struct TLASNode {
     vec4 aabb_min;
     vec4 aabb_max;
     uint blas;
-    uint left_right;
+    uint instance;
+    uint left;
+    uint right;
+};
+
+struct Instance {
+    mat4 world_to_instance;
+    uint object_id;
 };
 
 struct RNG {

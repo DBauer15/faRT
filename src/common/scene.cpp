@@ -165,7 +165,9 @@ Scene::loadObj(std::string scene) {
     for (uint32_t i = 0; i < m_objects.size(); i++) {
         ObjectInstance instance;
         instance.object_id = i;
-        instance.world_to_instance = glm::mat4(1.f);
+        instance.world_to_instance = glm::inverse(glm::mat4(1.f));
+        if (i >= 1) 
+            instance.world_to_instance = glm::inverse(glm::rotate(instance.world_to_instance, 45.f, glm::vec3(0, 1, 0)));
         m_instances.push_back(instance);
     }
 }
@@ -341,6 +343,9 @@ Scene::loadPBRT(std::string scene) {
     std::shared_ptr<pbrt::Scene> pbrt_scene;
     pbrt_scene = pbrt::importPBRT(scene);
 
+    // Flatten hierarchy to avoid the pain of combining hierarchical instance transforms
+    pbrt_scene->makeSingleLevel();
+
     // Add a default material for faces that do not have a material id
     m_materials.push_back(OpenPBRMaterial::defaultMaterial());
 
@@ -354,7 +359,7 @@ Scene::loadPBRT(std::string scene) {
     if (m_instances.size() == 0 && m_objects.size() > 0) {
         ObjectInstance root;
         root.object_id = 0;
-        root.world_to_instance = glm::mat4(1.f);
+        root.world_to_instance = glm::inverse(glm::mat4(1.f));
         m_instances.push_back(root);
         WARN("No instance data found, adding default instance");
     }
@@ -428,7 +433,18 @@ Scene::loadPBRTInstancesRecursive(std::shared_ptr<pbrt::Instance> current, const
     if (object_map.find(current->object) != object_map.end()) {
         ObjectInstance instance;
         instance.object_id = object_map.at(current->object);
-        instance.world_to_instance = glm::make_mat4(&current->xfm.l.vx.x);
+        auto& xfm = current->xfm;
+        instance.world_to_instance = glm::inverse(glm::mat4(
+                xfm.l.vx.x, xfm.l.vx.y, xfm.l.vx.z, 0,
+                xfm.l.vy.x, xfm.l.vy.y, xfm.l.vy.z, 0,
+                xfm.l.vz.x, xfm.l.vz.y, xfm.l.vz.z, 0,
+                xfm.p.x, xfm.p.y, xfm.p.z, 1));
+        //instance.instance_to_world = glm::mat4(
+                //xfm.l.vx.x, xfm.l.vy.x, xfm.l.vz.x, 0,
+                //xfm.l.vx.y, xfm.l.vy.y, xfm.l.vz.y, 0,
+                //xfm.l.vx.z, xfm.l.vy.z, xfm.l.vz.z, 0,
+                //xfm.p.x, xfm.p.y, xfm.p.z, 1);
+
         m_instances.push_back(instance);
         LOG("Loaded instance of '" + current->object->name + "'");
     }

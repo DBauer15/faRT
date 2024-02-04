@@ -3,6 +3,20 @@
 namespace fart {
 
 AABB
+AABB::transform(const glm::mat4& xfm) const {
+    AABB result;
+
+    // From: https://github.com/jbikker/bvh_article/blob/d7141934b00c23d2a0523f24525c511fdec0114c/alltogether.cpp#L266
+    for (int i = 0; i < 8; i++)
+        result.extend( glm::vec3( xfm * glm::vec4(
+                                            glm::vec3( i & 1 ? max.x : min.x, 
+                                                       i & 2 ? max.y : min.y, 
+                                                       i & 4 ? max.z : min.z ),
+                                                 1)));
+    return result;
+}
+
+AABB
 AABB::merge(const AABB& other) const {
     // Inline min/max faster than glm and std equivalents
     return {

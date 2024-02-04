@@ -8,6 +8,7 @@ struct AABB {
     alignas(16) glm::vec3 min { 1e30f };
     alignas(16) glm::vec3 max { -1e30f };
 
+    AABB transform(const glm::mat4& xfm) const;
     AABB merge(const AABB& other) const;
 
     void extend(const glm::vec3& other);

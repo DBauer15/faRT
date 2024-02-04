@@ -20,7 +20,8 @@ TLAS::build() {
 
     if (m_bvhs.size() == 0 || m_instances.size() == 0) {
         m_tlas_nodes.resize( 1 );
-        m_tlas_nodes[0].left_right = 0;
+        m_tlas_nodes[0].left = 0;
+        m_tlas_nodes[0].right = 0;
         return;
     }
 
@@ -41,10 +42,14 @@ TLAS::build() {
     for (uint32_t i = 0; i < N; i++) {
         node_idx[i] = m_nodes_used;
         // TODO: Respect the instance's transform here
-        m_tlas_nodes[m_nodes_used].aabb = m_bvhs[m_instances[i].object_id].getNodes()[0].aabb;
+        m_tlas_nodes[m_nodes_used].aabb = m_bvhs[m_instances[i].object_id].getNodes()[0].aabb.transform(glm::inverse(m_instances[i].world_to_instance));
+        //m_tlas_nodes[m_nodes_used].aabb = m_bvhs[m_instances[i].object_id].getNodes()[0].aabb;
+        m_tlas_nodes[m_nodes_used].instance = i;
         m_tlas_nodes[m_nodes_used].blas = bvh_node_offsets[m_instances[i].object_id];
 
-        m_tlas_nodes[m_nodes_used].left_right = 0;
+        m_tlas_nodes[m_nodes_used].left = 0;
+        m_tlas_nodes[m_nodes_used].right = 0;
+
         m_nodes_used += 1;
     }
 
@@ -58,7 +63,8 @@ TLAS::build() {
             TLASNode& node_a = m_tlas_nodes[node_idx_a];
             TLASNode& node_b = m_tlas_nodes[node_idx_b];
             TLASNode& new_node = m_tlas_nodes[m_nodes_used];
-            new_node.left_right = node_idx_a + (node_idx_b << 16);
+            new_node.left = node_idx_b;
+            new_node.right = node_idx_a;
             new_node.aabb = node_a.aabb.merge(node_b.aabb);
             node_idx[A] = m_nodes_used++;
             node_idx[B] = node_idx[node_indices - 1];

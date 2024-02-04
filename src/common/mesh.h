@@ -28,7 +28,7 @@ struct Object {
 struct ObjectInstance {
     public:
         glm::mat4 world_to_instance;
-        uint32_t object_id;
+        alignas(16) uint32_t object_id;
 };
 
 }

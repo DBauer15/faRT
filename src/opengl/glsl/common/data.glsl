@@ -22,6 +22,10 @@ layout(std430, binding = 3) buffer accel1 {
     TLASNode tlas [];
 };
 
-layout(std430, binding = 4) buffer mat0 {
+layout(std430, binding = 4) buffer inst0 {
+    Instance instances [];
+};
+
+layout(std430, binding = 5) buffer mat0 {
     OpenPBRMaterial materials [];
 };
