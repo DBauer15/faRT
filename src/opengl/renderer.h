@@ -2,6 +2,7 @@
 
 #include "buffer.h"
 #include "bvh.h"
+#include "tlas.h"
 #include "framebuffer.h"
 #include "vertex_array.h"
 #include "shader.h"
@@ -25,11 +26,15 @@ struct OpenGlRenderer : Renderer {
 
         std::shared_ptr<Scene> m_scene;
         std::shared_ptr<Window> m_window;
-        std::shared_ptr<BVH> m_bvh;
+        std::vector<BVHNode> m_blas_list;
+        std::shared_ptr<TLAS> m_tlas;
+        std::vector<AligendVertex> m_vertices_contiguous;
+        std::vector<uint32_t> m_indices_contiguous;
 
         std::unique_ptr<Buffer> m_quad;
 
-        std::unique_ptr<StorageBuffer> m_bvh_buffer;
+        std::unique_ptr<StorageBuffer> m_blas_buffer;
+        std::unique_ptr<StorageBuffer> m_tlas_buffer;
         std::unique_ptr<StorageBuffer> m_vertices;
         std::unique_ptr<StorageBuffer> m_indices;
         std::unique_ptr<StorageBuffer> m_materials;
@@ -45,7 +50,7 @@ struct OpenGlRenderer : Renderer {
         std::unique_ptr<Texture> m_accum_texture0;
         std::unique_ptr<Texture> m_accum_texture1;
 
-        void initBVH();
+        void initAccelerationStructures();
         void initFrameBuffer();
         void initBuffers();
         void initTextures();

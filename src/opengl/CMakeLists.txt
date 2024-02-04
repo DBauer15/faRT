@@ -5,6 +5,8 @@ endif()
 find_package(OpenGL REQUIRED)
 
 add_library(renderer_opengl
+    aabb.cpp
+    aabb.h
     buffer.cpp
     buffer.h
     bvh.cpp
@@ -17,6 +19,8 @@ add_library(renderer_opengl
     shader.h
     texture.cpp
     texture.h
+    tlas.cpp
+    tlas.h
     vertex_array.cpp
     vertex_array.h
     )

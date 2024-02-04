@@ -18,6 +18,10 @@ layout(std430, binding = 2) buffer accel0 {
     BVHNode bvh [];
 };
 
-layout(std430, binding = 3) buffer mat0 {
+layout(std430, binding = 3) buffer accel1 {
+    TLASNode tlas [];
+};
+
+layout(std430, binding = 4) buffer mat0 {
     OpenPBRMaterial materials [];
 };

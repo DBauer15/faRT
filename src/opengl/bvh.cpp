@@ -6,37 +6,16 @@
 #include <string>
 #include <chrono>
 
+/* 
+ * Code adapted from "How to build a BVH" and "Physically Based Rendering"
+ * References:
+ * https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
+ * https://pbr-book.org/
+ *
+ */
 namespace fart {
 
-Bounds
-Bounds::merge(const Bounds& other) const {
-    // Inline min/max faster than glm and std equivalents
-    return {
-        {   
-            min.x > other.min.x ? other.min.x : min.x, 
-                min.y > other.min.y ? other.min.y : min.y, 
-                min.z > other.min.z ? other.min.z : min.z, 
-        },
-            {   
-                max.x < other.max.x ? other.max.x : max.x,
-                max.y < other.max.y ? other.max.y : max.y,
-                max.z < other.max.z ? other.max.z : max.z,
-            }
-    };
-}
-
-void
-Bounds::extend(const glm::vec3& other) {
-    // Inline min/max faster than glm and std equivalents
-    min.x = min.x > other.x ? other.x : min.x;
-    min.y = min.y > other.y ? other.y : min.y;
-    min.z = min.z > other.z ? other.z : min.z;
-    max.x = max.x < other.x ? other.x : max.x;
-    max.y = max.y < other.y ? other.y : max.y;
-    max.z = max.z < other.z ? other.z : max.z;
-}
-
-BVH::BVH(std::vector<Geometry>& geometries, BVHSplitMethod split_method) {
+BVH::BVH(const std::vector<Geometry>& geometries, BVHSplitMethod split_method) {
     size_t index_offset = 0;
 
     size_t vertices_size = std::accumulate(geometries.begin(), geometries.end(), 0, [](size_t acc, const Geometry& el) { return acc + el.vertices.size(); });
@@ -74,7 +53,7 @@ BVH::build() {
     size_t N = m_indices.size() / 3;
     m_nodes_used = 1;
     m_centroids.resize(N);
-    m_bvh_nodes.resize( N * 2 - 1 );
+    m_bvh_nodes.resize( N * 2 );
 
     for (size_t i = 0; i < N; ++i) {
         
@@ -95,7 +74,7 @@ BVH::build() {
 
     auto build_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - t_start);
 
-    SUCC("Built BVH over " + std::to_string(N) + " triangles in " + std::to_string(build_time_ms.count() / 1000.f) + " seconds");
+    LOG("Built BVH over " + std::to_string(N) + " triangles in " + std::to_string(build_time_ms.count() / 1000.f) + " seconds");
 }
 
 void
@@ -207,7 +186,7 @@ BVH::splitSAH(uint32_t node_idx, float& split_pos, uint32_t& axis) {
 
         float costs[n_splits] = {};
         int count_below = 0;
-        Bounds bound_below;
+        AABB bound_below;
         for (int i = 0; i < n_splits; i++) {
             bound_below = bound_below.merge(buckets[i].bounds);
             count_below += buckets[i].count;
@@ -215,7 +194,7 @@ BVH::splitSAH(uint32_t node_idx, float& split_pos, uint32_t& axis) {
         }
 
         int count_above = 0;
-        Bounds bound_above;
+        AABB bound_above;
         for (int i = n_splits; i >= 1; i--) {
             bound_above = bound_above.merge(buckets[i].bounds);
             count_above += buckets[i].count;

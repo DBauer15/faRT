@@ -38,13 +38,16 @@ bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_in
         // TODO: This could be moved to somewhere nicer with less divergence
         if (t < ray.t) {
             vec3 bary = vec3(1.f - u - v, u, v);
-            si.uv = getUV(first_index, bary);
-            si.n = getNormal(first_index, bary);
-            si.n = si.n * sign(dot(si.n, -ray.d));
-            si.mat = materials[material_id];
+            vec2 uv = getUV(first_index, bary);
+            OpenPBRMaterial mat = materials[material_id];
+            vec3 face_normal = normalize(cross(edge1, edge2));
+            vec3 vertex_normal = getNormal(first_index, bary);
+            vertex_normal = vertex_normal * (dot(face_normal, -ray.d) < 0.f ? -1.f : 1.f);
 
-            if (si.mat.base_color_texid >= 0 && texture(u_textures[si.mat.base_color_texid], si.uv).a < EPS) return false;
-
+            if (mat.base_color_texid >= 0 && texture(u_textures[mat.base_color_texid], uv).a == 0.f) return false;
+            si.uv = uv;
+            si.n = vertex_normal;
+            si.mat = mat;
             ray.t = min( ray.t, t );
             si.valid = true;
             return true;
@@ -53,10 +56,7 @@ bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_in
     return false;
 }
 
-float intersectAABB(Ray ray, BVHNode node) {
-    vec3 bmin = node.aabb_min.xyz;
-    vec3 bmax = node.aabb_max.xyz;
-
+float intersectAABB(Ray ray, vec3 bmin, vec3 bmax) {
     float tx1 = (bmin.x - ray.o.x) * ray.rD.x, tx2 = (bmax.x - ray.o.x) * ray.rD.x;
     float tmin = min( tx1, tx2 ), tmax = max( tx1, tx2 );
     float ty1 = (bmin.y - ray.o.y) * ray.rD.y, ty2 = (bmax.y - ray.o.y) * ray.rD.y;
@@ -68,13 +68,10 @@ float intersectAABB(Ray ray, BVHNode node) {
     return 1e30f; 
 }
 
-SurfaceInteraction intersect(Ray ray) {
-    SurfaceInteraction si;
-    si.valid = false;
-
+SurfaceInteraction intersectBLAS(inout Ray ray, inout SurfaceInteraction si, uint bvh_offset) {
     uint stack[32];
     int current = 0;
-    stack[current] = 0;
+    stack[current] = bvh_offset;
 
     do {
         BVHNode node = bvh[stack[current--]];
@@ -85,15 +82,15 @@ SurfaceInteraction intersect(Ray ray) {
                 intersectTriangle(ray, si, node.first_tri_index_id + (3*i));
             }
         } else {
-            float left_dist = intersectAABB(ray, bvh[node.left_child]);
-            float right_dist = intersectAABB(ray, bvh[node.left_child+1]);
+            float left_dist = intersectAABB(ray, bvh[bvh_offset + node.left_child].aabb_min.xyz, bvh[bvh_offset + node.left_child].aabb_max.xyz);
+            float right_dist = intersectAABB(ray, bvh[bvh_offset + node.left_child+1].aabb_min.xyz, bvh[bvh_offset + node.left_child+1].aabb_max.xyz);
 
             if (left_dist > right_dist) {
-                if (left_dist < 1e30f) stack[++current] = node.left_child;
-                if (right_dist < 1e30f) stack[++current] = node.left_child+1;
+                if (left_dist < 1e30f) stack[++current] = bvh_offset + node.left_child;
+                if (right_dist < 1e30f) stack[++current] = bvh_offset + node.left_child+1;
             } else {
-                if (right_dist < 1e30f) stack[++current] = node.left_child+1;
-                if (left_dist < 1e30f) stack[++current] = node.left_child;
+                if (right_dist < 1e30f) stack[++current] = bvh_offset + node.left_child+1;
+                if (left_dist < 1e30f) stack[++current] = bvh_offset + node.left_child;
             }
         }
         
@@ -102,5 +99,34 @@ SurfaceInteraction intersect(Ray ray) {
     si.p = ray.o + ray.d * ray.t;
     si.w_o = -ray.d;
     
+    return si;
+}
+
+SurfaceInteraction intersect(Ray ray) {
+    SurfaceInteraction si;
+    si.valid = false;
+
+    uint stack[16];
+    int current = 0;
+    stack[current] = 0;
+
+    do {
+        TLASNode node = tlas[stack[current--]];
+        if (node.left_right == 0) {
+            intersectBLAS(ray, si, node.blas);
+        } else {
+            float left_dist = intersectAABB(ray, tlas[node.left_right >> 16].aabb_min.xyz, tlas[node.left_right >> 16].aabb_max.xyz);
+            float right_dist = intersectAABB(ray, tlas[node.left_right & 0xFFFF].aabb_min.xyz, tlas[node.left_right & 0xFFFF].aabb_max.xyz);
+
+            if (left_dist > right_dist) {
+                if (left_dist < 1e30f) stack[++current] = node.left_right >> 16;
+                if (right_dist < 1e30f) stack[++current] = node.left_right & 0xFFFF;
+            } else {
+                if (right_dist < 1e30f) stack[++current] = node.left_right & 0xFFFF;
+                if (left_dist < 1e30f) stack[++current] = node.left_right >> 16;
+            }
+        }
+    } while (current >= 0 && current < 16);
+
     return si;
 }

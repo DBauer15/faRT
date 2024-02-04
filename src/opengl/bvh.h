@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/mesh.h"
+#include "aabb.h"
 
 #include <vector>
 #include <glm/glm.hpp>
@@ -8,32 +9,13 @@
 
 namespace fart {
 
-struct Bounds {
-    alignas(16) glm::vec3 min { 1e30f };
-    alignas(16) glm::vec3 max { -1e30f };
-
-    Bounds merge(const Bounds& other) const;
-
-    void extend(const glm::vec3& other);
-
-    glm::vec3 extent() const {
-        return { max.x - min.x, max.y - min.y, max.z - min.z };
-    }
-
-    float surfaceArea() const {
-        glm::vec3 d = extent();
-        if (d.x < 0.f || d.y < 0.f || d.z < 0.f) return 0.f;
-        return 2 * (d.x * d.y + d.x * d.z + d.y * d.z);
-    }
-};
-
 struct BVHSplitBucket {
     int count = 0;
-    Bounds bounds;
+    AABB bounds;
 };
 
 struct BVHNode {
-    Bounds aabb;
+    AABB aabb;
     uint32_t left_child { 0 };
     uint32_t first_tri_index_id, tri_count, filler;
 };
@@ -46,7 +28,7 @@ enum BVHSplitMethod {
 struct BVH {
 
     public:
-        BVH( std::vector<Geometry>& geometries, BVHSplitMethod split_method = BVHSplitMethod::SAH );
+        BVH( const std::vector<Geometry>& geometries, BVHSplitMethod split_method = BVHSplitMethod::SAH );
         BVH( std::vector<AligendVertex>& vertices, std::vector<uint32_t>& indices, BVHSplitMethod split_method = BVHSplitMethod::SAH );
 
         size_t getNodesUsed() { return m_nodes_used; }

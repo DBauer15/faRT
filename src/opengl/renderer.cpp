@@ -1,6 +1,8 @@
 #include "gldefs.h"
 #include "renderer.h"
 #include <memory>
+#include <algorithm>
+#include <numeric>
 #include <chrono>
 
 namespace fart {
@@ -11,7 +13,7 @@ OpenGlRenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &win
     m_window = window;
 
     initGl();
-    initBVH();
+    initAccelerationStructures();
     initFrameBuffer();
     initBuffers();
     initTextures();
@@ -20,8 +22,50 @@ OpenGlRenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &win
 }
 
 void
-OpenGlRenderer::initBVH() {
-    m_bvh = std::make_unique<BVH>(m_scene->getObjects()[0].geometries);
+OpenGlRenderer::initAccelerationStructures() {
+
+    // Build BLAS BVHs
+    std::vector<BVH> bvhs;
+    for (const auto& object : m_scene->getObjects()) {
+        BVH bvh(object.geometries);
+        bvhs.push_back(bvh);
+    }
+
+    // Store BVH information locally
+    size_t bvhnodes_size = std::accumulate(bvhs.begin(), bvhs.end(), 0, [](size_t acc, BVH& bvh) { return acc + bvh.getNodesUsed(); });
+    size_t vertices_size = std::accumulate(bvhs.begin(), bvhs.end(), 0, [](size_t acc, BVH& bvh) { return acc + bvh.getVertices().size(); });
+    size_t indices_size = std::accumulate(bvhs.begin(), bvhs.end(), 0, [](size_t acc, BVH& bvh) { return acc + bvh.getIndices().size(); });
+    size_t index_offset = 0;
+    size_t index_id_offset = 0;
+    m_blas_list.reserve(bvhnodes_size);
+    m_vertices_contiguous.reserve(vertices_size);
+    m_indices_contiguous.reserve(indices_size);
+    for (auto& bvh : bvhs) {
+        // Insert vertices and indices that were held by this BVH
+        m_vertices_contiguous.insert(m_vertices_contiguous.end(), bvh.getVertices().begin(), bvh.getVertices().end());
+        m_indices_contiguous.insert(m_indices_contiguous.end(), bvh.getIndices().begin(), bvh.getIndices().end());
+
+        // Offset index numbers by the current number of contiguous indices
+        std::transform(m_indices_contiguous.end() - bvh.getIndices().size(), 
+                       m_indices_contiguous.end(), 
+                       m_indices_contiguous.end() - bvh.getIndices().size(), 
+            [&](uint32_t index) {
+                return index + index_offset;
+        });
+
+        // Offset index ids by the current number of contiguous index ids
+        std::vector<BVHNode>& nodes = bvh.getNodes();
+        for (auto& node : nodes){
+            if (node.left_child == 0)
+                node.first_tri_index_id += index_id_offset;
+        }
+        m_blas_list.insert(m_blas_list.end(), nodes.begin(), nodes.begin() + bvh.getNodesUsed());
+        index_offset += bvh.getVertices().size();
+        index_id_offset += bvh.getIndices().size();
+    }
+    
+    // Build TLAS
+    m_tlas = std::make_unique<TLAS>(m_scene->getInstances(), bvhs);
 }
 
 void
@@ -47,12 +91,14 @@ OpenGlRenderer::initBuffers() {
     m_quad = std::make_unique<Buffer>(GL_ARRAY_BUFFER);
     m_vertices = std::make_unique<StorageBuffer>(0);
     m_indices = std::make_unique<StorageBuffer>(1);
-    m_bvh_buffer = std::make_unique<StorageBuffer>(2);
-    m_materials = std::make_unique<StorageBuffer>(3);
+    m_blas_buffer = std::make_unique<StorageBuffer>(2);
+    m_tlas_buffer = std::make_unique<StorageBuffer>(3);
+    m_materials = std::make_unique<StorageBuffer>(4);
 
-    m_vertices->setData(m_bvh->getVertices());
-    m_indices->setData(m_bvh->getIndices());
-    m_bvh_buffer->setData(m_bvh->getNodes().data(), m_bvh->getNodesUsed());
+    m_vertices->setData(m_vertices_contiguous);
+    m_indices->setData(m_indices_contiguous);
+    m_blas_buffer->setData(m_blas_list);
+    m_tlas_buffer->setData(m_tlas->getNodes().data(), m_tlas->getNodesUsed());
     m_materials->setData(m_scene->getMaterials());
 
     std::vector<float> quad {
@@ -111,7 +157,8 @@ OpenGlRenderer::initBindings() {
     m_quad->bind();
     m_vertices->bind();
     m_indices->bind();
-    m_bvh_buffer->bind();
+    m_blas_buffer->bind();
+    m_tlas_buffer->bind();
     m_vertex_array_pathtracer->addVertexAttribute(/*shader=*/*m_shader_pathtracer.get(), 
                                        /*attribute_name=*/"a_position", 
                                        /*size=*/3, 
@@ -121,7 +168,8 @@ OpenGlRenderer::initBindings() {
     m_quad->unbind();
     m_vertices->unbind();
     m_indices->unbind();
-    m_bvh_buffer->unbind();
+    m_blas_buffer->unbind();
+    m_tlas_buffer->unbind();
 
     m_vertex_array_postprocess = std::make_unique<VertexArray>();
     m_vertex_array_postprocess->bind();

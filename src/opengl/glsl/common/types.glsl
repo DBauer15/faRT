@@ -52,6 +52,13 @@ struct BVHNode {
     uint filler; // TODO: Figure out a better way to deal with alignments
 };
 
+struct TLASNode {
+    vec4 aabb_min;
+    vec4 aabb_max;
+    uint blas;
+    uint left_right;
+};
+
 struct RNG {
     uint state;
 };

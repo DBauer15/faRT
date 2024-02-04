@@ -41,6 +41,7 @@ struct Scene {
         Scene &operator=(const Scene &) = delete;
         
         std::vector<Object>& getObjects() { return m_objects; }
+        std::vector<ObjectInstance>& getInstances() { return m_instances; }
         std::vector<OpenPBRMaterial>& getMaterials() { return m_materials; }
         std::vector<Image>& getTextures() { return m_textures; }
 
