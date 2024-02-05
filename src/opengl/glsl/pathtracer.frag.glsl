@@ -22,9 +22,7 @@ vec4 miss(Ray ray) {
     return background;
 }
 
-vec4 closestHit(SurfaceInteraction si) {
-    uint pixel_id = uint(gl_FragCoord.y * u_viewport_size.x + gl_FragCoord.x);
-    RNG rng = make_random(pixel_id, u_frame_no);
+vec4 closestHit(SurfaceInteraction si, RNG rng) {
 
     vec3 L = vec3(0.f);
     vec3 throughput = vec3(1.f);
@@ -67,12 +65,12 @@ vec4 closestHit(SurfaceInteraction si) {
     return vec4(L, 1.f);
 }
 
-Ray spawnRay(vec2 uv) {
+Ray spawnRay(vec2 d) {
     Ray ray;
     ray.o = u_camera.eye;
     ray.d = normalize(u_camera.dir + 
-                        u_aspect_ratio * (uv.x-.5f) * cross(u_camera.dir, u_camera.up) +
-                        (uv.y-.5f) * u_camera.up);
+                        u_aspect_ratio * (d.x-.5f) * cross(u_camera.dir, u_camera.up) +
+                        (d.y-.5f) * u_camera.up);
     ray.rD = 1.f / ray.d;
     ray.t = 1e30f;
     
@@ -80,13 +78,17 @@ Ray spawnRay(vec2 uv) {
 }
 
 void main() {
+    uint pixel_id = uint(gl_FragCoord.y * u_viewport_size.x + gl_FragCoord.x);
+    RNG rng = make_random(pixel_id, u_frame_no);
+
     vec4 L = vec4(0.f);
-    vec2 uv = gl_FragCoord.xy / u_viewport_size;
-    Ray ray = spawnRay(uv);
+    vec2 uv = vec2(gl_FragCoord.xy) / u_viewport_size;
+    vec2 d = uv + (next_random2f(rng) / u_viewport_size);
+    Ray ray = spawnRay(d);
 
     SurfaceInteraction si = intersect(ray);
     if (si.valid)
-        L = closestHit(si);
+        L = closestHit(si, rng);
     else
         L = miss(ray);
 
