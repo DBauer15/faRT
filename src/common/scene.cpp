@@ -106,7 +106,6 @@ Scene::loadObj(std::string scene) {
     for (const auto& shape : shapes) {
         const auto& mesh = shape.mesh;
 
-        // TODO: Resolve index tuples here (vertex, normal)     
         std::map<std::tuple<uint32_t, uint32_t, uint32_t>, uint32_t> index_map; 
 
         Geometry g;

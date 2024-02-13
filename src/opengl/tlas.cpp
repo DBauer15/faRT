@@ -41,9 +41,7 @@ TLAS::build() {
 
     for (uint32_t i = 0; i < N; i++) {
         node_idx[i] = m_nodes_used;
-        // TODO: Respect the instance's transform here
         m_tlas_nodes[m_nodes_used].aabb = m_bvhs[m_instances[i].object_id].getNodes()[0].aabb.transform(glm::inverse(m_instances[i].world_to_instance));
-        //m_tlas_nodes[m_nodes_used].aabb = m_bvhs[m_instances[i].object_id].getNodes()[0].aabb;
         m_tlas_nodes[m_nodes_used].instance = i;
         m_tlas_nodes[m_nodes_used].blas = bvh_node_offsets[m_instances[i].object_id];
 
