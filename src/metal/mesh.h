@@ -29,7 +29,8 @@ struct MetalObject {
         MetalObject(MTL::Device* device, const Object& object);
 
         std::vector<MetalGeometry>& getGeometries() { return m_geometries; }
-        NS::Array* getGeometryDescriptors() { return m_descriptors_array; }
+        std::vector<MTL::AccelerationStructureGeometryDescriptor*> getGeometryDescriptors() { return m_descriptors; }
+        NS::Array* getGeometryDescriptorsArray() { return m_descriptors_array; }
 
     private:
         std::vector<MetalGeometry> m_geometries;

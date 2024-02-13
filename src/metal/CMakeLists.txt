@@ -9,6 +9,8 @@ add_library(renderer_metal
     renderer.mm
     renderer.cpp
     renderer.h
+    texture.cpp 
+    texture.h 
     )
 
 set_target_properties(renderer_metal PROPERTIES

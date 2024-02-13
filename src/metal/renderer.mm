@@ -18,4 +18,19 @@ MetalRenderer::addLayerToWindow(GLFWwindow* window, CA::MetalLayer* layer) {
     [[cocoa_window contentView] setNeedsLayout:YES];
 }
 
+void
+MetalRenderer::resizeLayer(CA::MetalLayer* layer, uint32_t width, uint32_t height) {
+    CAMetalLayer* native_layer = (__bridge CAMetalLayer*)layer;
+
+    CGSize old_size = [native_layer drawableSize];
+    CGSize new_size = { (double)width, (double)height };
+
+    if (old_size.width == new_size.width &&
+        old_size.height == new_size.height) 
+        return;
+
+    LOG("Resizing");
+    [native_layer setDrawableSize: new_size];
+}
+
 }

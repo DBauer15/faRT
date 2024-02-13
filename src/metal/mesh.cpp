@@ -24,9 +24,9 @@ MetalGeometry::getDescriptor() {
     descriptor->setVertexStride(sizeof(AligendVertex));
     descriptor->setTriangleCount(m_num_indices / 3);
 
-    descriptor->setPrimitiveDataBuffer(m_vertices);
-    descriptor->setPrimitiveDataStride(sizeof(AligendVertex));
-    descriptor->setPrimitiveDataElementSize(sizeof(AligendVertex));
+    // descriptor->setPrimitiveDataBuffer(m_vertices);
+    // descriptor->setPrimitiveDataStride(3 * sizeof(AligendVertex));
+    // descriptor->setPrimitiveDataElementSize(3 * sizeof(AligendVertex));
 
     return descriptor;
 }

@@ -10,6 +10,7 @@
 namespace fart {
 
 MetalRenderer::~MetalRenderer() {
+    // TODO: Release resources and textures
     if (m_device)
         m_device->release();
     if (m_command_queue)
@@ -27,9 +28,10 @@ MetalRenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &wind
 
     initMetal();
     initFrameBuffer();
-    initBuffers();
-    initAccelerationStructure();
     initPipeline();
+    initBuffers();
+    initIntersectionFunctionTable();
+    initAccelerationStructure();
 }
 
 void
@@ -49,27 +51,84 @@ MetalRenderer::initFrameBuffer() {
     addLayerToWindow(m_window->getGlfwWindow(), m_layer);
 
     // Create accumulation textures
-    MTL::TextureDescriptor* texture_descriptor = MTL::TextureDescriptor::alloc()->init();
-    texture_descriptor->setPixelFormat(MTL::PixelFormatRGBA32Float);
-    texture_descriptor->setTextureType(MTL::TextureType2D);
-    texture_descriptor->setWidth(m_window->getWidth());
-    texture_descriptor->setHeight(m_window->getHeight());
-
-    texture_descriptor->setStorageMode(MTL::StorageModePrivate);
-    texture_descriptor->setUsage(MTL::TextureUsageShaderRead | MTL::TextureUsageShaderWrite);
-
-    m_accum_texture0 = m_device->newTexture(texture_descriptor);
-    m_accum_texture1 = m_device->newTexture(texture_descriptor);
+    m_accum_texture0 = std::make_unique<Texture>(m_device, m_window->getWidth(), m_window->getHeight(),
+                                                 MTL::PixelFormatRGBA32Float,
+                                                 MTL::StorageModePrivate,
+                                                 MTL::TextureUsageShaderRead | MTL::TextureUsageShaderWrite);
+    m_accum_texture1 = std::make_unique<Texture>(m_device, m_window->getWidth(), m_window->getHeight(),
+                                                 MTL::PixelFormatRGBA32Float,
+                                                 MTL::StorageModePrivate,
+                                                 MTL::TextureUsageShaderRead | MTL::TextureUsageShaderWrite);
 }
 
 void
 MetalRenderer::initBuffers() {
+    size_t n_geomtries = 0;
     for (auto& object : m_scene->getObjects()) {
         MetalObject metal_object(m_device, object);
+        n_geomtries += metal_object.getGeometries().size();
         m_objects.push_back(metal_object);
     }
 
     m_uniforms = m_device->newBuffer(sizeof(MetalRendererUniforms), MTL::StorageModeShared);
+
+    size_t resource_stride = sizeof(uint64_t) * 2; // vertices and indices pointers
+    m_resources = m_device->newBuffer(resource_stride * n_geomtries, MTL::StorageModeManaged);
+    size_t geometry_count = 0;
+    for (auto& object : m_objects) {
+        for(auto& geometry : object.getGeometries()) {
+            uint64_t *resource_handle = (uint64_t*)((uint8_t*)m_resources->contents() + resource_stride * geometry_count);
+            const auto& resources = geometry.getResources();
+            for (size_t i = 0; i < resources.size(); i++) {
+                resource_handle[i] = ((MTL::Buffer*)resources[i])->gpuAddress();
+            }
+            geometry_count += 1;
+        }
+    }
+    m_resources->didModifyRange(NS::Range(0, resource_stride * n_geomtries));
+
+    m_materials = m_device->newBuffer(m_scene->getMaterials().data(), m_scene->getMaterials().size() * sizeof(OpenPBRMaterial), MTL::StorageModeShared);
+    m_materials->didModifyRange(NS::Range(0, m_scene->getMaterials().size() * sizeof(OpenPBRMaterial)));
+
+    m_textures = m_device->newBuffer(m_scene->getTextures().size() * sizeof(uint64_t), MTL::StorageModeManaged);
+    size_t texture_count = 0;
+    for (auto& texture : m_scene->getTextures()) {
+        Texture metal_texture(m_device, 
+                              texture.getWidth(),
+                              texture.getHeight(),
+                              MTL::PixelFormatRGBA8Unorm_sRGB,
+                              MTL::StorageModeManaged,
+                              MTL::TextureUsageShaderRead);
+        metal_texture.setData(texture.getData());
+        
+        MTL::ResourceID *textures_handle = (MTL::ResourceID*)((uint8_t*)m_textures->contents() + texture_count * sizeof(uint64_t));
+        *textures_handle = metal_texture.getTexture()->gpuResourceID();
+        texture_count += 1;
+
+        m_texture_list.push_back(std::move(metal_texture));
+    }
+    m_textures->didModifyRange(NS::Range(0, m_scene->getTextures().size() * sizeof(uint64_t)));
+}
+
+void
+MetalRenderer::initIntersectionFunctionTable() {
+    size_t geometry_count = 0;
+    for (auto& object : m_objects) geometry_count += object.getGeometries().size();
+
+    MTL::Function* intersection_function = m_library->newFunction(NS::String::string("alphatest", NS::StringEncoding::ASCIIStringEncoding));
+    MTL::FunctionHandle* intersection_function_handle = m_pathtracing_pipeline_state->functionHandle(intersection_function);
+
+    MTL::IntersectionFunctionTableDescriptor* descriptor = MTL::IntersectionFunctionTableDescriptor::alloc()->init();
+    descriptor->setFunctionCount(geometry_count);
+
+    m_intersection_function_table = m_pathtracing_pipeline_state->newIntersectionFunctionTable(descriptor);
+    for (size_t i = 0; i < geometry_count; i++)
+        m_intersection_function_table->setFunction(intersection_function_handle, i);
+    m_intersection_function_table->setBuffer(m_resources, 0, 0);
+    m_intersection_function_table->setBuffer(m_materials, 0, 1);
+    m_intersection_function_table->setBuffer(m_textures, 0, 2);
+
+    descriptor->release();
 }
 
 MTL::AccelerationStructure*
@@ -152,12 +211,12 @@ MetalRenderer::createAccelerationStructureWithDescriptor(MTL::AccelerationStruct
 void
 MetalRenderer::initAccelerationStructure() {
 
-    MTL::AccelerationStructureGeometryDescriptor* geometry_descriptor;
+    size_t geometry_count = 0;
     for(auto& object : m_objects) {
-        NS::Array* geometry_descriptors = object.getGeometryDescriptors();
-
-        // Create a primitive acceleration structure descriptor to contain the single piece
-        // of acceleration structure geometry.
+        for (auto& geometry_descriptor : object.getGeometryDescriptors()) {
+            geometry_descriptor->setIntersectionFunctionTableOffset(geometry_count++);
+        }
+        NS::Array* geometry_descriptors = object.getGeometryDescriptorsArray();
         MTL::PrimitiveAccelerationStructureDescriptor* accel_descriptor = MTL::PrimitiveAccelerationStructureDescriptor::descriptor();
         accel_descriptor->setGeometryDescriptors(geometry_descriptors);
 
@@ -171,24 +230,16 @@ MetalRenderer::initAccelerationStructure() {
     m_instances = m_device->newBuffer(m_scene->getInstances().size() * sizeof(MTL::AccelerationStructureInstanceDescriptor), MTL::StorageModeShared);
     MTL::AccelerationStructureInstanceDescriptor* instance_descriptors = (MTL::AccelerationStructureInstanceDescriptor*) m_instances->contents();
 
-    for (int i = 0; i < m_scene->getInstances().size(); i++) {
+    for (size_t i = 0; i < m_scene->getInstances().size(); i++) {
         ObjectInstance& instance = m_scene->getInstances()[i];
 
-        // Map the instance to its acceleration structure.
         instance_descriptors[i].accelerationStructureIndex = instance.object_id;
-
-        // Mark the instance as opaque if it doesn't have an intersection function so that the
-        // ray intersector doesn't attempt to execute a function that doesn't exist.
-        instance_descriptors[i].options = MTL::AccelerationStructureInstanceOptionOpaque;
-
-        // Set the instance mask, which the sample uses to filter out intersections between rays
-        // and geometry. For example, it uses masks to prevent light sources from being visible
-        // to secondary rays, which would result in their contribution being double-counted.
+        // AccelerationStructureInstanceOptionOpque indicates that this insance is completely opaque and does not use custom intersection functions
+        // instance_descriptors[i].options = MTL::AccelerationStructureInstanceOptionOpaque;
+        instance_descriptors[i].options = 0;
         instance_descriptors[i].mask = 0x01;
+        instance_descriptors[i].intersectionFunctionTableOffset = 0;
 
-        // Copy the first three rows of the instance transformation matrix. Metal
-        // assumes that the bottom row is (0, 0, 0, 1), which allows the renderer to
-        // tightly pack instance descriptors in memory.
         glm::mat4 instance_to_world = glm::inverse(instance.world_to_instance);
         for (int column = 0; column < 4; column++)
             for (int row = 0; row < 3; row++)
@@ -215,9 +266,13 @@ MetalRenderer::initPipeline() {
     
     // Initialize the compute pipeline state that will perform the path tracing step and store the result in a texture
     MTL::Function* pathtracer_function = m_library->newFunction(NS::String::string("pathtracer", NS::StringEncoding::ASCIIStringEncoding));
+    MTL::Function* pathtracer_intersection_function = m_library->newFunction(NS::String::string("alphatest", NS::StringEncoding::ASCIIStringEncoding));
+    MTL::LinkedFunctions* linked_functions = MTL::LinkedFunctions::alloc()->init();
+    linked_functions->setFunctions(NS::Array::array((const NS::Object*) pathtracer_intersection_function));
 
     MTL::ComputePipelineDescriptor* compute_pipeline_descriptor = MTL::ComputePipelineDescriptor::alloc()->init();
     compute_pipeline_descriptor->setComputeFunction(pathtracer_function);
+    compute_pipeline_descriptor->setLinkedFunctions(linked_functions);
     compute_pipeline_descriptor->setThreadGroupSizeIsMultipleOfThreadExecutionWidth(true);
 
     m_pathtracing_pipeline_state = m_device->newComputePipelineState(compute_pipeline_descriptor, 0, nullptr, &error);
@@ -249,6 +304,8 @@ MetalRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 
     // Update uniforms
     MetalRendererUniforms* uniforms = (MetalRendererUniforms*)m_uniforms->contents();
     uniforms->frame_number += 1;
+    if (shouldClear(eye, dir, up))
+        uniforms->frame_number = 0;
     uniforms->viewport_size = glm::vec4(m_window->getViewportSize(), 0, 0);
     uniforms->aspect_ratio = (float)m_window->getWidth() / m_window->getHeight();
     uniforms->scene_scale = m_scene->getSceneScale();
@@ -257,12 +314,13 @@ MetalRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 
     uniforms->up = glm::vec4(up, 0);
     m_uniforms->didModifyRange(NS::Range(0, sizeof(MetalRendererUniforms)));
 
+    // Handle resize
+    resizeLayer(m_layer, m_window->getWidth(), m_window->getHeight());
+    m_accum_texture0->resize(m_device, m_window->getWidth(), m_window->getHeight());
+    m_accum_texture1->resize(m_device, m_window->getWidth(), m_window->getHeight());
+
     MTL::CommandBuffer* command_buffer = m_command_queue->commandBuffer();
     renderpassPathtracer(command_buffer);
-    command_buffer->commit();
-    command_buffer->waitUntilCompleted();
-    command_buffer->release();
-    command_buffer = m_command_queue->commandBuffer();
     renderpassPostprocess(command_buffer);
     command_buffer->commit();
     command_buffer->waitUntilCompleted();
@@ -280,10 +338,15 @@ MetalRenderer::renderpassPathtracer(MTL::CommandBuffer* command_buffer) {
     
     MTL::ComputeCommandEncoder* compute_command_encoder = command_buffer->computeCommandEncoder();
     compute_command_encoder->setComputePipelineState(m_pathtracing_pipeline_state);
-    compute_command_encoder->setTexture(m_accum_texture0, 0);
-    compute_command_encoder->setBuffer(m_instances, 0, 0);
-    compute_command_encoder->setAccelerationStructure(m_tlas, 1);
+    compute_command_encoder->setTexture(m_accum_texture0->getTexture(), 0);
+    compute_command_encoder->setTexture(m_accum_texture1->getTexture(), 1);
+    compute_command_encoder->setAccelerationStructure(m_tlas, 0);
+    compute_command_encoder->setIntersectionFunctionTable(m_intersection_function_table, 1);
     compute_command_encoder->setBuffer(m_uniforms, 0, 2);
+    compute_command_encoder->setBuffer(m_instances, 0, 3);
+    compute_command_encoder->setBuffer(m_resources, 0, 4);
+    compute_command_encoder->setBuffer(m_materials, 0, 5);
+    compute_command_encoder->setBuffer(m_textures, 0, 6);
 
     // Bindless resources need to be explicitely used
     for (auto& object : m_objects) {
@@ -299,6 +362,11 @@ MetalRenderer::renderpassPathtracer(MTL::CommandBuffer* command_buffer) {
     // Same here, bindless BLASs need to be explicitely used
     for (auto& blas : m_blas_list) {
         compute_command_encoder->useResource(blas, MTL::ResourceUsageRead);
+    }
+
+    // Similarly for the textures
+    for (auto& texture : m_texture_list) { 
+        compute_command_encoder->useResource(texture.getTexture(), MTL::ResourceUsageRead);
     }
 
     compute_command_encoder->dispatchThreadgroups(threadgroups, threadsPerThreadgroup);
@@ -319,7 +387,7 @@ MetalRenderer::renderpassPostprocess(MTL::CommandBuffer* command_buffer) {
 
     MTL::RenderCommandEncoder* render_command_encoder = command_buffer->renderCommandEncoder(render_pass_descriptor);
     render_command_encoder->setRenderPipelineState(m_postprocess_pipeline_state);
-    render_command_encoder->setFragmentTexture(m_accum_texture0, 0);
+    render_command_encoder->setFragmentTexture(m_accum_texture0->getTexture(), 0);
 
     MTL::PrimitiveType triangle = MTL::PrimitiveType::PrimitiveTypeTriangle;
     NS::UInteger start = 0;
@@ -333,5 +401,19 @@ MetalRenderer::renderpassPostprocess(MTL::CommandBuffer* command_buffer) {
     render_pass_descriptor->release();
     drawable->release();
 }
+
+bool
+MetalRenderer::shouldClear(const glm::vec3& eye, const glm::vec3& dir, const glm::vec3& up) {
+    bool clear = glm::any(glm::epsilonNotEqual(eye, m_prev_eye, 0.00001f)) ||
+                 glm::any(glm::epsilonNotEqual(dir, m_prev_dir, 0.00001f)) ||
+                 glm::any(glm::epsilonNotEqual(up, m_prev_up, 0.00001f));
+
+    m_prev_eye = eye;
+    m_prev_dir = dir;
+    m_prev_up = up;
+
+    return clear;
+}
+
 
 }

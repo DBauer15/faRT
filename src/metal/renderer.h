@@ -14,6 +14,7 @@
 #include "common/renderer.h"
 
 #include "mesh.h"
+#include "texture.h"
 
 namespace fart {
 
@@ -43,12 +44,15 @@ struct MetalRenderer : Renderer {
         }
 
     private:
+        glm::vec3 m_prev_eye, m_prev_dir, m_prev_up;
+
         std::shared_ptr<Window> m_window { nullptr };
         std::shared_ptr<Scene> m_scene { nullptr };
 
         // Objects and functions needed to interface between Metal and GLFW
         CA::MetalLayer* m_layer                             { nullptr };
         void addLayerToWindow(GLFWwindow* window, CA::MetalLayer* layer);
+        void resizeLayer(CA::MetalLayer* layer, uint32_t width, uint32_t height);
 
         // Common Metal objects
         MTL::Device* m_device                               { nullptr };
@@ -56,26 +60,33 @@ struct MetalRenderer : Renderer {
         MTL::Library* m_library                             { nullptr };
 
         // Pathtracing specific Metal objects
-        MTL::ComputePipelineState* m_pathtracing_pipeline_state     { nullptr };
-        MTL::RenderPipelineState* m_postprocess_pipeline_state      { nullptr };
-        MTL::Texture* m_accum_texture0                              { nullptr };
-        MTL::Texture* m_accum_texture1                              { nullptr };
-        MTL::AccelerationStructure* m_tlas                          { nullptr };
+        MTL::ComputePipelineState* m_pathtracing_pipeline_state         { nullptr };
+        MTL::RenderPipelineState* m_postprocess_pipeline_state          { nullptr };
+        std::unique_ptr<Texture> m_accum_texture0                       { nullptr };
+        std::unique_ptr<Texture> m_accum_texture1                       { nullptr };
+        MTL::IntersectionFunctionTable* m_intersection_function_table   { nullptr };
+        MTL::AccelerationStructure* m_tlas                              { nullptr };
         std::vector<MTL::AccelerationStructure*> m_blas_list;
 
         // Metal data resources
         std::vector<MetalObject> m_objects;
         MTL::Buffer* m_instances             { nullptr };
         MTL::Buffer* m_uniforms              { nullptr };
+        MTL::Buffer* m_resources             { nullptr };
+        MTL::Buffer* m_materials             { nullptr };
+        MTL::Buffer* m_textures              { nullptr };
+        std::vector<Texture> m_texture_list;
 
         // Private helper functions
         void initMetal();
         void initFrameBuffer();
         void initBuffers();
+        void initIntersectionFunctionTable();
         void initAccelerationStructure();
         void initPipeline();
         void renderpassPathtracer(MTL::CommandBuffer* command_buffer);
         void renderpassPostprocess(MTL::CommandBuffer* command_buffer);
+        bool shouldClear(const glm::vec3& eye, const glm::vec3& dir, const glm::vec3& up);
 
         MTL::AccelerationStructure* createAccelerationStructureWithDescriptor(MTL::AccelerationStructureDescriptor* descriptor);
 };
