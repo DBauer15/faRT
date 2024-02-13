@@ -11,6 +11,10 @@ struct Image {
 
     public:
         Image(std::string filename);
+        Image(Image& other) = delete;
+        Image(Image&& other);
+        Image& operator=(Image& other) = delete;
+        Image& operator=(Image&& other);
         ~Image();
 
         uint8_t* getData() { return m_image; }

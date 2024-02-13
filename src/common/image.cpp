@@ -7,22 +7,40 @@ namespace fart {
 
 Image::Image(std::string filename) {
     stbi_set_flip_vertically_on_load(true);  
-    uint8_t* img = stbi_load(filename.c_str(), &m_width, &m_height, &m_channels, 4);
-    //m_image = stbi_load(filename.c_str(), &m_width, &m_height, &m_channels, 4);
+    m_image = stbi_load(filename.c_str(), &m_width, &m_height, &m_channels, 4);
+    m_channels = 4;
 
-    m_image = img;
+    // m_image = img;
     if (m_image == nullptr) {
         ERR("Unable to load image '" + filename + "'");
         return;
     }
-    //for (int i = 0; i < getWidth() * getHeight() * getChannels(); i++) {
-        //std::cout << std::to_string(m_image[i]) << " ";
-    //}
+}
+
+Image::Image(Image&& other) {
+    m_image = other.m_image;
+    m_width = other.m_width;
+    m_height = other.m_height;
+    m_channels = other.m_channels;
+    other.m_image = nullptr;
+}
+
+Image&
+Image::operator=(Image&& other) {
+    if (m_image != nullptr)
+        stbi_image_free(m_image);
+    m_image = other.m_image;
+    m_width = other.m_width;
+    m_height = other.m_height;
+    m_channels = other.m_channels;
+    other.m_image = nullptr;
+
+    return *this;
 }
 
 Image::~Image() {
-    //if (m_image != nullptr)
-        //stbi_image_free(m_image);
+    if (m_image != nullptr)
+        stbi_image_free(m_image);
 }
 
 }
