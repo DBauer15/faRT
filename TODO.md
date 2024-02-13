@@ -4,6 +4,7 @@
 - [ ] GitHub CI
 
 ## GLSL
+- [ ] Packed types for material struct alignment
 - [ ] Parallelize TLAS builder
 - [ ] Find a better way to orthonormalize directions. 
 - [ ] Find a scale-dependent offset of ray origins to avoid self-intersections. (Ray Tracing Gems Chapter 6)
@@ -17,3 +18,6 @@
 - [ ] Flatten BVH as DFS for (potentially) better cache coherence.
 - [X] Improve SSBO alignment. Renderer copies vertices with 1 empty float buffer to align vec3s to vec4s.
 - [ ] Implement render modes (Albedo, Normal, Depth, BVH)
+
+## Metal
+- [X] Custom intersection function for alpha testing
