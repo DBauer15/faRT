@@ -14,8 +14,7 @@
 /* GGX Microfacet */
 float pdf_glossy(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
     float theta_i = dot(si.n, w_i);
-    float theta_o = dot(si.n, w_o);
-    if (theta_i < 0.f || theta_o < 0.f) return 0.f;
+    if (theta_i < 0.f) return 0.f;
 
     vec3 h = normalize(w_i + w_o);
     float theta_h = dot(si.n, h);
@@ -71,8 +70,7 @@ vec3 ggx_reflectance(SurfaceInteraction si, vec3 w_o, RNG rng) {
 /* Lambertian Diffuse */
 float pdf_diffuse(SurfaceInteraction si, vec3 w_i, vec3 w_o) {
     float theta_i = dot(si.n, w_i);
-    float theta_o = dot(si.n, w_o);
-    if (theta_i < 0.f || theta_o < 0.f) return 0.f;
+    if (theta_i < 0.f) return 0.f;
     return theta_i * ONE_OVER_PI;
 }
 
