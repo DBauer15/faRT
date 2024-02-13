@@ -87,7 +87,7 @@ Scene::loadObj(std::string scene) {
                 std::replace(texture_filename.begin(), texture_filename.end(), '\\', '/');
                 Image diffuse_texture(texture_filename);
                 if (diffuse_texture.isValid()) { 
-                    m_textures.push_back(diffuse_texture);
+                    m_textures.push_back(std::move(diffuse_texture));
                     pbr_mat.base_color_texid = m_textures.size() - 1;
                     texture_index_map[material.diffuse_texname] = m_textures.size() - 1;
                     LOG("Read texture image '" + material.diffuse_texname + "'");
@@ -437,11 +437,6 @@ Scene::loadPBRTInstancesRecursive(std::shared_ptr<pbrt::Instance> current, const
                 xfm.l.vy.x, xfm.l.vy.y, xfm.l.vy.z, 0,
                 xfm.l.vz.x, xfm.l.vz.y, xfm.l.vz.z, 0,
                 xfm.p.x, xfm.p.y, xfm.p.z, 1));
-        //instance.instance_to_world = glm::mat4(
-                //xfm.l.vx.x, xfm.l.vy.x, xfm.l.vz.x, 0,
-                //xfm.l.vx.y, xfm.l.vy.y, xfm.l.vz.y, 0,
-                //xfm.l.vx.z, xfm.l.vy.z, xfm.l.vz.z, 0,
-                //xfm.p.x, xfm.p.y, xfm.p.z, 1);
 
         m_instances.push_back(instance);
         LOG("Loaded instance of '" + current->object->name + "'");
