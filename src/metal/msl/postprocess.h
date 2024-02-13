@@ -7,6 +7,7 @@
 #define MSL_POSTPROCESS_H
 
 #include <metal_stdlib>
+#include "common/color.h"
 using namespace metal;
 
 // Screen filling quad in normalized device coordinates.
@@ -42,13 +43,9 @@ fragment float4 postprocessFragment(PostprocessVertexOut in [[stage_in]],
 {
     constexpr sampler sam(min_filter::nearest, mag_filter::nearest, mip_filter::none);
 
-    float3 color = tex.sample(sam, in.uv).xyz;
+    float4 color = float4(tex.sample(sam, in.uv).xyz, 1);
 
-    // Apply a simple tonemapping function to reduce the dynamic range of the
-    // input image into a range which the screen can display.
-    color = color / (1.0f + color);
-
-    return float4(color, 1.0f);
+    return float4(gamma(tonemap_ACES(color)).rgb, 1.f);
 }
 
 #endif
