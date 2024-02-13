@@ -32,7 +32,7 @@ Window::initWindow() {
 #else 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     m_window = glfwCreateWindow(m_width, m_height, m_window_title.c_str(), nullptr, nullptr);
 
