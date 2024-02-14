@@ -45,6 +45,10 @@ struct OpenPBRMaterial {
     float specular_rotation;
     float specular_ior;
     float specular_ior_level;
+
+    float geometry_opacity;
+    int   geometry_opacity_texid;
+    float pad0, pad1;
 };
 
 struct SurfaceInteraction {

@@ -65,7 +65,7 @@ float3 eval_glossy(thread const SurfaceInteraction  &si,
     float d = (ndoth2 * (a2 - 1.f)) + 1.f;
     float D = a2 / max(FLT_MIN, d * d * PI);
 
-    return float3(1.f) * (F * G * D) / (4.f * ndotv /* * ndotl */) /* * ndotl */; // ndotl (theta_i) left out for numerical robustness
+    return si.mat.specular_weight * (F * G * D) / (4.f * ndotv /* * ndotl */) /* * ndotl */; // ndotl (theta_i) left out for numerical robustness
 }
 
 /* Estimator for GGX Microfacet reflectanace */
@@ -145,12 +145,12 @@ float3 bsdf_sample(thread const SurfaceInteraction  &si,
     float3 w;
 
     // TODO: Find better heuristic to choose the sampler
-    float q = next_randomf(rng);
-    if (q < 0.5f) {
+    int bsdf_component = next_randomf(rng) * 2.f;
+    if (bsdf_component == 0) {
         w = sample_diffuse(si, rng);
-    } else {
+    } else if (bsdf_component == 1) {
         w = sample_glossy(si, rng);
-    }
+    } 
 
     pdf = bsdf_pdf(si, w, si.w_o);
     return w;
@@ -161,8 +161,7 @@ float3 bsdf_eval(thread const SurfaceInteraction    &si,
                  float3                             w_o, 
                  thread RNG                         &rng)
 {
-    const float rec_n_components = 1.f;
     float3 f = float3(0.f);
     f += eval_glossy_diffuse(si, w_i, w_o, rng);
-    return f * rec_n_components;
+    return f;
 }

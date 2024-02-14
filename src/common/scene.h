@@ -84,6 +84,7 @@ struct Scene {
 
         /* Utility Functions */
         void updateSceneScale();
+        float luminance(glm::vec3 c);
 
         /* Scene Data */
         std::vector<Object> m_objects;

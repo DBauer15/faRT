@@ -29,7 +29,6 @@ MetalRenderer::resizeLayer(CA::MetalLayer* layer, uint32_t width, uint32_t heigh
         old_size.height == new_size.height) 
         return;
 
-    LOG("Resizing");
     [native_layer setDrawableSize: new_size];
 }
 

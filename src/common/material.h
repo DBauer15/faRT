@@ -22,6 +22,11 @@ struct OpenPBRMaterial {
     float       specular_ior;
     float       specular_ior_level;
 
+    /* Geometry */
+    float       geometry_opacity;
+    int32_t    geometry_opacity_texid;
+    float       pad[2];
+
     static OpenPBRMaterial defaultMaterial() {
         OpenPBRMaterial pbr_mat;
 
@@ -38,6 +43,9 @@ struct OpenPBRMaterial {
         pbr_mat.specular_rotation      = 0.f;
         pbr_mat.specular_ior           = 1.5f;
         pbr_mat.specular_ior_level     = 0.5f;
+
+        pbr_mat.geometry_opacity       = 1.f;
+        pbr_mat.geometry_opacity_texid = -1;
         
         return pbr_mat;
     }

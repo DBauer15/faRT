@@ -75,6 +75,7 @@ Scene::loadObj(std::string scene) {
         OpenPBRMaterial pbr_mat = OpenPBRMaterial::defaultMaterial();
         pbr_mat.base_color = glm::make_vec3(material.diffuse);
         pbr_mat.specular_color = glm::make_vec3(material.specular);
+        pbr_mat.specular_weight = luminance(pbr_mat.specular_color);
         pbr_mat.specular_ior = material.ior;
         pbr_mat.specular_roughness = std::clamp((1.f - std::log10(material.shininess + 1) / 3.f), 0.01f, 1.f); // TODO: This is not a good approximation of roughness as the Phong shininess is exponential
         
@@ -332,6 +333,11 @@ Scene::updateSceneScale() {
     }
 
     m_scene_scale = max_vertex - min_vertex;
+}
+
+float
+Scene::luminance(glm::vec3 c) {
+    return 0.299f*c.r + 0.587f*c.g + 0.114f*c.b;
 }
 
 void
