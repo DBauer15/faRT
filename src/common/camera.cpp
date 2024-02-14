@@ -32,7 +32,7 @@ namespace fart {
 // Project the point in [-1, 1] screen space onto the arcball sphere
 static glm::quat screen_to_arcball(const glm::vec2 &p);
 
-Camera::Camera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up)
+ArcballCamera::ArcballCamera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up)
 {
     const glm::vec3 dir = center - eye;
     glm::vec3 z_axis = glm::normalize(dir);
@@ -44,10 +44,10 @@ Camera::Camera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up)
     translation = glm::translate(glm::vec3(0.f, 0.f, -glm::length(dir)));
     rotation = glm::normalize(glm::quat_cast(glm::transpose(glm::mat3(x_axis, y_axis, -z_axis))));
 
-    update_camera();
+    updateCamera();
 }
 
-void Camera::rotate(glm::vec2 prev_mouse, glm::vec2 cur_mouse)
+void ArcballCamera::rotate(glm::vec2 prev_mouse, glm::vec2 cur_mouse)
 {
     // Clamp mouse positions to stay in NDC
     cur_mouse = glm::clamp(cur_mouse, glm::vec2{-1, -1}, glm::vec2{1, 1});
@@ -57,10 +57,10 @@ void Camera::rotate(glm::vec2 prev_mouse, glm::vec2 cur_mouse)
     const glm::quat mouse_prev_ball = screen_to_arcball(prev_mouse);
 
     rotation = mouse_cur_ball * mouse_prev_ball * rotation;
-    update_camera();
+    updateCamera();
 }
 
-void Camera::pan(glm::vec2 mouse_delta)
+void ArcballCamera::pan(glm::vec2 mouse_delta)
 {
     const float zoom_amount = std::abs(translation[3][2]);
     glm::vec4 motion(mouse_delta.x * zoom_amount, mouse_delta.y * zoom_amount, 0.f, 0.f);
@@ -68,43 +68,22 @@ void Camera::pan(glm::vec2 mouse_delta)
     motion = inv_camera * motion;
 
     center_translation = glm::translate(glm::vec3(motion)) * center_translation;
-    update_camera();
+    updateCamera();
 }
 
-void Camera::zoom(const float zoom_amount)
+void ArcballCamera::zoom(const float zoom_amount)
 {
     const glm::vec3 motion(0.f, 0.f, zoom_amount);
 
     translation = glm::translate(motion) * translation;
-    update_camera();
+    updateCamera();
 }
 
-const glm::mat4 &Camera::transform() const
-{
-    return camera;
+glm::vec3 ArcballCamera::center() const {
+    return glm::vec3(glm::inverse(center_translation) * glm::vec4{ 0, 0, 0, 1});
 }
 
-const glm::mat4 &Camera::inv_transform() const
-{
-    return inv_camera;
-}
-
-glm::vec3 Camera::eye() const
-{
-    return glm::vec3{inv_camera * glm::vec4{0, 0, 0, 1}};
-}
-
-glm::vec3 Camera::dir() const
-{
-    return glm::normalize(glm::vec3{inv_camera * glm::vec4{0, 0, -1, 0}});
-}
-
-glm::vec3 Camera::up() const
-{
-    return glm::normalize(glm::vec3{inv_camera * glm::vec4{0, 1, 0, 0}});
-}
-
-void Camera::update_camera()
+void ArcballCamera::updateCamera()
 {
     camera = translation * glm::mat4_cast(rotation) * center_translation;
     inv_camera = glm::inverse(camera);
@@ -121,6 +100,44 @@ glm::quat screen_to_arcball(const glm::vec2 &p)
         const glm::vec2 proj = glm::normalize(p);
         return glm::quat(0.0, proj.x, proj.y, 0.f);
     }
+}
+
+FirstPersonCamera::FirstPersonCamera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up) {
+    const glm::vec3 dir = center - eye;
+    glm::vec3 z_axis = glm::normalize(dir);
+    glm::vec3 x_axis = glm::normalize(glm::cross(z_axis, glm::normalize(up)));
+    glm::vec3 y_axis = glm::normalize(glm::cross(x_axis, z_axis));
+    x_axis = glm::normalize(glm::cross(z_axis, y_axis));
+
+    translation = glm::translate(-eye);
+    rotation = glm::normalize(glm::quat_cast(glm::transpose(glm::mat3(x_axis, y_axis, -z_axis))));
+
+    updateCamera();
+}
+
+
+void 
+FirstPersonCamera::rotate(glm::vec2 prev_mouse, glm::vec2 cur_mouse) {
+    glm::vec2 delta { cur_mouse.x - prev_mouse.x, prev_mouse.y - cur_mouse.y };
+    delta *= 5.f;
+    glm::quat yaw = glm::angleAxis(delta.x, glm::vec3{ 0, 1, 0 });
+    glm::quat pitch = glm::angleAxis(delta.y, glm::vec3{ 1, 0, 0 });
+
+    rotation = pitch * rotation * yaw;
+    updateCamera();
+}
+
+void 
+FirstPersonCamera::move(glm::vec3 delta) {
+    delta = dir() * delta.z + up() * delta.y + glm::cross(dir(), up()) * delta.x;
+    translation = glm::translate(delta) * translation;
+    updateCamera();
+}
+
+void
+FirstPersonCamera::updateCamera() {
+    camera = glm::mat4_cast(rotation) * translation;
+    inv_camera = glm::inverse(camera);
 }
 
 }

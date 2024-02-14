@@ -21,8 +21,8 @@ namespace fart {
 struct App {
     
     public:
-        static constexpr uint32_t WIDTH = 1920;
-        static constexpr uint32_t HEIGHT = 1080;
+        static constexpr uint32_t WIDTH = 1280;
+        static constexpr uint32_t HEIGHT = 720;
 
         App(std::string scene);
         ~App() = default;
@@ -30,6 +30,8 @@ struct App {
         void run();
 
     private:
+        glm::vec3 keyboardInputToMovementVector();
+
         float m_fps_ema { -1.f };
         long long m_frame_count { 0 };
         

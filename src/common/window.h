@@ -36,6 +36,10 @@ struct Window {
         bool isMouseLeftPressed() const { return m_mouse_left_pressed; }
         bool isMouseRightPressed() const { return m_mouse_right_pressed; }
         bool isMouseMiddlePressed() const { return m_mouse_middle_pressed; }
+        bool isKeyPressed(int key) const {
+            int state = glfwGetKey(m_window, key);
+            return state == GLFW_PRESS;
+        }
 
     private:
         void windowSizeCallback(GLFWwindow* window, int width, int height) {

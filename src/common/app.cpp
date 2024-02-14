@@ -8,7 +8,7 @@ namespace fart {
 App::App(std::string scene) {
     m_renderer = std::make_unique<DeviceRenderer>();
     m_scene = std::make_unique<Scene>(scene);
-    m_camera = std::make_unique<Camera>(
+    m_camera = std::make_unique<FirstPersonCamera>(
             glm::vec3( 0.f, 0.f, -m_scene->getSceneScale() ), 
             glm::vec3( 0.f, 0.f, 0.f ), 
             glm::vec3( 0.f, 1.f, 0.f ));
@@ -35,6 +35,15 @@ App::run() {
                 m_camera->zoom(m_window->getDeltaMousePosition().y * m_scene->getSceneScale());
             if (m_window->isMouseMiddlePressed())
                 m_camera->pan(m_window->getDeltaMousePosition());
+            m_camera->move(keyboardInputToMovementVector() * m_scene->getSceneScale());
+
+            // camera mode
+            if (m_window->isKeyPressed(GLFW_KEY_C)) {
+                if (typeid(*m_camera) == typeid(ArcballCamera))
+                    m_camera = std::make_unique<FirstPersonCamera>(*m_camera);
+                else
+                    m_camera = std::make_unique<ArcballCamera>(*m_camera);
+            }
         }
 
         // render pass
@@ -42,7 +51,6 @@ App::run() {
         m_renderer->render(m_camera->eye(), m_camera->dir(), m_camera->up(), render_stats);
         if (m_fps_ema < 0.f) m_fps_ema = (1000.f / render_stats.frame_time_ms); 
         m_fps_ema = 0.05f * (1000.f / render_stats.frame_time_ms) + 0.95f * m_fps_ema;
-        //if (m_frame_count % 100 == 0) m_window->setWindowTitle("FaRT - " + m_renderer->name() + " @ " + std::to_string(m_fps_ema) + " fps");
         if (m_fps_ema / ( m_frame_count + 1 ) < 5.f) {
             m_window->setWindowTitle("FaRT - " + m_renderer->name() + " @ " + std::to_string(int(m_fps_ema)) + " fps");
             m_frame_count = 0;
@@ -52,6 +60,21 @@ App::run() {
 
         m_frame_count += 1;
     }
+}
+
+glm::vec3
+App::keyboardInputToMovementVector() {
+    glm::vec3 movement = glm::vec3(0);
+    float s = 0.001f;
+    movement += glm::vec3(s,0,0) * float(m_window->isKeyPressed(GLFW_KEY_A));
+    movement += glm::vec3(-s,0,0) * float(m_window->isKeyPressed(GLFW_KEY_D));
+    movement += glm::vec3(0,0,-s) * float(m_window->isKeyPressed(GLFW_KEY_W));
+    movement += glm::vec3(0,0,s) * float(m_window->isKeyPressed(GLFW_KEY_S));
+
+    if (m_window->isKeyPressed(GLFW_KEY_SPACE))
+        movement *= 10.f;
+
+    return movement;
 }
 
 }
