@@ -59,7 +59,9 @@ Camera modes can be switched by pressing C.
 ### First-Person Camera
 * `c` - Switch to arcball camera
 * `LMB` - Rotate the camera
-* `w`, `a`, `s`, `d` - Move the camera
+* `w`, `a`, `s`, `d` - Move the camera forward/left/backward/right
+* `e`, `q` - Move camera up/down
+* `SPACE` - Movement boost
 
 ### Arcball Camera
 * `c` - Switch to first-person camera
@@ -71,6 +73,7 @@ Camera modes can be switched by pressing C.
 Here is an ever evolving list of supported file format.
 
 - [X] Wavefront OBJ
+- [X] PBRTv3 Format
 - [ ] Autodesk FBX
 - [ ] Stanford PLY
 - [ ] GL Transmission Format glTF

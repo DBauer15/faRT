@@ -70,6 +70,8 @@ App::keyboardInputToMovementVector() {
     movement += glm::vec3(-s,0,0) * float(m_window->isKeyPressed(GLFW_KEY_D));
     movement += glm::vec3(0,0,-s) * float(m_window->isKeyPressed(GLFW_KEY_W));
     movement += glm::vec3(0,0,s) * float(m_window->isKeyPressed(GLFW_KEY_S));
+    movement += glm::vec3(0,-s,0) * float(m_window->isKeyPressed(GLFW_KEY_E));
+    movement += glm::vec3(0,s,0) * float(m_window->isKeyPressed(GLFW_KEY_Q));
 
     if (m_window->isKeyPressed(GLFW_KEY_SPACE))
         movement *= 10.f;
