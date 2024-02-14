@@ -53,11 +53,19 @@ cd build
 Where `[SCENE_FILE]` is a 3D file of any of the supported formats (see "Supported 3D Formats" for details).
 
 ## Controls
-The renderer implements a simple arcball camera model. The camera can be controlled via mouse inputs.
+The renderer implements two camera models - a first-person camera (default) and a simple arcball camera model. The camera can be controlled via mouse inputs.
+Camera modes can be switched by pressing C.
 
-* LMB - Rotate the camera
-* RMB - Zoom in/out 
-* MMB - Pan the view
+### First-Person Camera
+* `c` - Switch to arcball camera
+* `LMB` - Rotate the camera
+* `w`, `a`, `s`, `d` - Move the camera
+
+### Arcball Camera
+* `c` - Switch to first-person camera
+* `LMB` - Rotate the camera
+* `RMB` - Zoom in/out 
+* `MMB` - Pan the view
 
 ## Supported 3D Formats
 Here is an ever evolving list of supported file format.
