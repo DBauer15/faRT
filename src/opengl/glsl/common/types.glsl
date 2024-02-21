@@ -24,6 +24,7 @@ struct OpenPBRMaterial {
     float base_weight;
     float base_roughness;
     float base_metalness;
+
     vec3  specular_color;
     float specular_weight;
     float specular_roughness;
@@ -31,6 +32,9 @@ struct OpenPBRMaterial {
     float specular_rotation;
     float specular_ior;
     float specular_ior_level;
+
+    float geometry_opacity;
+    int   geometry_opacity_texid;
 };
 
 struct SurfaceInteraction {

@@ -47,7 +47,7 @@ bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_in
 
             if (mat.base_color_texid >= 0 && texture(u_textures[mat.base_color_texid], uv).a == 0.f) return false;
             si.uv = uv;
-            si.n = face_normal;
+            si.n = vertex_normal;
             si.mat = mat;
             ray.t = min( ray.t, t );
 

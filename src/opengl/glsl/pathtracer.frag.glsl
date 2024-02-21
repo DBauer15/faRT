@@ -22,7 +22,7 @@ vec4 miss(Ray ray) {
     return background;
 }
 
-vec4 closestHit(SurfaceInteraction si, RNG rng) {
+vec4 closestHit(SurfaceInteraction si, inout RNG rng) {
 
     vec3 L = vec3(0.f);
     vec3 throughput = vec3(1.f);
