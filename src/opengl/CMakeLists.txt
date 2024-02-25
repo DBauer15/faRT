@@ -3,6 +3,11 @@ if (NOT BUILD_OPENGL_RENDERER)
 endif()
 
 find_package(OpenGL REQUIRED)
+if (WIN32)
+    set(libgl opengl32)
+else()
+    set(libgl OpenGL::OpenGL)
+endif()
 
 add_library(renderer_opengl
     aabb.cpp
@@ -35,8 +40,8 @@ target_include_directories(renderer_opengl PUBLIC
 target_link_libraries(renderer_opengl PUBLIC 
     glm::glm
     glfw
-    OpenGL::OpenGL
     glad
+    ${libgl}
     )
 
 # Preprocess shader source and store in binary dir
