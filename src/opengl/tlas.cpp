@@ -1,6 +1,7 @@
 #include "tlas.h"
 
 #include "common/defs.h"
+#include <string>
 #include <cstdint>
 #include <chrono>
 
@@ -31,7 +32,7 @@ TLAS::build() {
 
     // Initialize leaf nodes
     std::vector<uint32_t> bvh_node_offsets;
-    bvh_node_offsets.reserve(m_bvhs.size());
+    bvh_node_offsets.resize(m_bvhs.size());
     bvh_node_offsets[0] = 0;
     for (size_t i = 1; i < m_bvhs.size(); i++)
         bvh_node_offsets[i] = bvh_node_offsets[i-1] + m_bvhs[i-1].getNodesUsed();

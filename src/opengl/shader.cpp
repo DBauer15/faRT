@@ -51,16 +51,16 @@ Shader::loadShaderProgram(std::string vert_binary_path, std::string frag_binary_
 
     // Check status
     GLint status;
-    glGetShaderiv(program, GL_LINK_STATUS, &status);
+    glGetProgramiv(program, GL_LINK_STATUS, &status);
 
     if (!status) {
         ERR("Failed to link shader program.");
         GLint maxLength = 0;
-        glGetShaderiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
 
         // The maxLength includes the NULL character
         std::vector<GLchar> errorLog(maxLength);
-        glGetShaderInfoLog(program, maxLength, &maxLength, &errorLog[0]);
+        glGetProgramInfoLog(program, maxLength, &maxLength, &errorLog[0]);
 
         ERR(&errorLog[0]);
 

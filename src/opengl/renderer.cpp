@@ -119,8 +119,8 @@ OpenGlRenderer::initBuffers() {
 void
 OpenGlRenderer::initTextures() {
     for (auto& image : m_scene->getTextures()) {
-        if (m_textures.size() >= 63) {
-            WARN("Maximum supported number of textures (63) reached, skipping the rest");
+        if (m_textures.size() >= 31) {
+            WARN("Maximum supported number of textures (31) reached, skipping the rest");
             break;
         }
         GLenum format = image.getChannels() == 4 ? GL_RGBA : GL_RGB;
@@ -237,7 +237,7 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
         m_shader_pathtracer->setFloat3("u_camera.eye", glm::value_ptr(eye));
         m_shader_pathtracer->setFloat3("u_camera.dir", glm::value_ptr(dir));
         m_shader_pathtracer->setFloat3("u_camera.up", glm::value_ptr(up));
-        int u_frag_color_accum_pos = 63;
+        int u_frag_color_accum_pos = 31;
         m_accum_texture1->activate(GL_TEXTURE0 + u_frag_color_accum_pos);
         m_accum_texture1->bind();
         m_shader_pathtracer->setInt("u_frag_color_accum", &u_frag_color_accum_pos);
@@ -258,7 +258,7 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
 
     { // Postprocessing renderpass
         m_shader_postprocess->use();
-        int u_frag_color_accum_pos = 63;
+        int u_frag_color_accum_pos = 31;
         m_accum_texture0->activate(GL_TEXTURE0 + u_frag_color_accum_pos);
         m_accum_texture0->bind();
         m_shader_postprocess->setInt("u_frag_color_accum", &u_frag_color_accum_pos);

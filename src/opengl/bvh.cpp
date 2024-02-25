@@ -176,7 +176,7 @@ BVH::splitSAH(uint32_t node_idx, float& split_pos, uint32_t& axis) {
         std::vector<BVHSplitBucket> buckets (n_buckets);
 
         for (uint32_t i = node.first_tri_index_id; i < node.first_tri_index_id + 3 * node.tri_count; i+=3) {
-            int b = n_buckets * ((m_centroids[i/3][ax] - node.aabb.min[ax]) / node_extent[ax]);
+            int b = n_buckets * std::clamp(((m_centroids[i / 3][ax] - node.aabb.min[ax]) / node_extent[ax]), 0.f, 1.f);
             if (b == n_buckets) b = n_buckets - 1;
             buckets[b].count += 1;
             buckets[b].bounds.extend(m_vertices[m_indices[i]].position);
