@@ -7,14 +7,14 @@ namespace fart {
 struct OpenPBRMaterial {
 
     /* Base */
-    glm::vec3   base_color;
+    alignas(16) glm::vec3   base_color;
     int32_t     base_color_texid;
     float       base_weight; 
     float       base_roughness;
     float       base_metalness;
 
     /* Specular */
-    glm::vec3   specular_color;
+    alignas(16) glm::vec3   specular_color;
     float       specular_weight;
     float       specular_roughness;
     float       specular_anisotropy;
