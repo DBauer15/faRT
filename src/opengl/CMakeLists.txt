@@ -44,6 +44,8 @@ target_link_libraries(renderer_opengl PUBLIC
     ${libgl}
     )
 
+target_compile_definitions(renderer_opengl PUBLIC OPENGL_RENDERER)
+
 # Preprocess shader source and store in binary dir
 file(GLOB_RECURSE SHADER_SOURCES ${CMAKE_CURRENT_LIST_DIR}/glsl/*.glsl)
 

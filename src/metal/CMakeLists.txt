@@ -28,6 +28,8 @@ target_link_libraries(renderer_metal PUBLIC
 
 target_link_libraries(renderer_metal PRIVATE "-framework Metal" "-framework QuartzCore" "-framework Foundation")
 
+target_compile_definitions(renderer_metal PUBLIC METAL_RENDERER)
+
 # Preprocess shader source and store in binary dir
 file(GLOB_RECURSE SHADER_SOURCES ${CMAKE_CURRENT_LIST_DIR}/msl/*)
 
