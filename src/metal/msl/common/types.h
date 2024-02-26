@@ -16,9 +16,9 @@ struct Uniforms {
 };
 
 struct Vertex {
-    float3 position;
-    float3 normal;
-    float2 uv;
+    packed_float3 position;
+    packed_float3 normal;
+    packed_float2 uv;
     uint material_id;
 };
 
@@ -46,9 +46,10 @@ struct OpenPBRMaterial {
     float specular_ior;
     float specular_ior_level;
 
+    float transmission_weight;
+
     float geometry_opacity;
     int   geometry_opacity_texid;
-    float pad0, pad1;
 };
 
 struct SurfaceInteraction {
@@ -57,6 +58,7 @@ struct SurfaceInteraction {
     float3 w_i;
     float3 w_o;
     float2 uv;
+    bool front_face;
     OpenPBRMaterial mat;
     device Texture* textures;
 };
