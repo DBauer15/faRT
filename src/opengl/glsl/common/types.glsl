@@ -33,6 +33,8 @@ struct OpenPBRMaterial {
     float specular_ior;
     float specular_ior_level;
 
+    float transmission_weight;
+
     float geometry_opacity;
     int   geometry_opacity_texid;
 };
