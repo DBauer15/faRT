@@ -93,6 +93,7 @@ float4 traceRay(thread ray                                            &ray,
         si.p = ray.origin + intersection.distance * ray.direction;
         si.n = normal;
         si.uv = uv;
+        si.front_face = intersection.triangle_front_facing;
         si.mat = materials[triangle[0].material_id];
         si.textures = textures;
         si.w_o = -ray.direction;
@@ -102,8 +103,9 @@ float4 traceRay(thread ray                                            &ray,
         f = bsdf_eval(si, si.w_i, si.w_o, rng);
         throughput = f * throughput / f_pdf;
 
-        ray.origin = si.p + 0.00001f * uniforms.scene_scale * si.n;
+        ray.origin = si.p;
         ray.direction = si.w_i;
+        ray.min_distance = 0.0001f * uniforms.scene_scale;
         ray.max_distance = INFINITY;
 
         if (i > MIN_RR_DEPTH) {
