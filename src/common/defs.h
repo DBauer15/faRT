@@ -9,3 +9,11 @@
 #define WARN(x) std::cout << STDOUT_YELLOW << x << STDOUT_RESET << std::endl;
 #define ERR(x) std::cout << STDOUT_RED << x << STDOUT_RESET << std::endl;
 #define SUCC(x) std::cout << STDOUT_GREEN << x << STDOUT_RESET << std::endl;
+
+#if OPENGL_RENDERER
+#define ALIGNED alignas(16)
+#elif METAL_RENDERER
+#define ALIGNED
+#else
+#define ALIGNED
+#endif

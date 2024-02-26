@@ -5,12 +5,14 @@
 
 #include <glm/glm.hpp>
 
+#include "defs.h"
+
 namespace fart {
 
 struct AligendVertex {
-    alignas(16) glm::vec3 position;
-    alignas(16) glm::vec3 normal;
-    alignas(16) glm::vec2 uv;
+    ALIGNED glm::vec3 position;
+    ALIGNED glm::vec3 normal;
+    ALIGNED glm::vec2 uv;
     uint32_t material_id;
 };
 

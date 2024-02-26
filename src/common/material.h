@@ -2,19 +2,21 @@
 
 #include <glm/glm.hpp>
 
+#include "defs.h"
+
 namespace fart {
 
 struct OpenPBRMaterial {
 
     /* Base */
-    alignas(16) glm::vec3   base_color;
+    ALIGNED glm::vec3   base_color;
     int32_t     base_color_texid;
     float       base_weight; 
     float       base_roughness;
     float       base_metalness;
 
     /* Specular */
-    alignas(16) glm::vec3   specular_color;
+    ALIGNED glm::vec3   specular_color;
     float       specular_weight;
     float       specular_roughness;
     float       specular_anisotropy;
@@ -22,10 +24,15 @@ struct OpenPBRMaterial {
     float       specular_ior;
     float       specular_ior_level;
 
+    /* Transmission */
+    float       transmission_weight;
+
     /* Geometry */
     float       geometry_opacity;
     int32_t    geometry_opacity_texid;
-    float       pad[2];
+
+    /* Padding for alignment */
+    float       pad[1];
 
     static OpenPBRMaterial defaultMaterial() {
         OpenPBRMaterial pbr_mat;
@@ -43,6 +50,8 @@ struct OpenPBRMaterial {
         pbr_mat.specular_rotation      = 0.f;
         pbr_mat.specular_ior           = 1.5f;
         pbr_mat.specular_ior_level     = 0.5f;
+
+        pbr_mat.transmission_weight    = 0.f;
 
         pbr_mat.geometry_opacity       = 1.f;
         pbr_mat.geometry_opacity_texid = -1;
