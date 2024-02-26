@@ -5,4 +5,4 @@ cmake -B build ^
     -DBUILD_METAL_RENDERER=OFF ^
     .
 
-cmake --build build --config Debug -j
+cmake --build build --config Release -j
