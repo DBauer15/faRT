@@ -11,9 +11,9 @@
 #define SUCC(x) std::cout << STDOUT_GREEN << x << STDOUT_RESET << std::endl;
 
 #if OPENGL_RENDERER
-#define ALIGNED alignas(16)
+#define DEVICE_ALIGNED alignas(16)
 #elif METAL_RENDERER
-#define ALIGNED
+#define DEVICE_ALIGNED
 #else
-#define ALIGNED
+#define DEVICE_ALIGNED
 #endif

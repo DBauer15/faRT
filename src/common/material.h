@@ -6,17 +6,17 @@
 
 namespace fart {
 
-struct OpenPBRMaterial {
+struct DEVICE_ALIGNED OpenPBRMaterial {
 
     /* Base */
-    ALIGNED glm::vec3   base_color;
+    DEVICE_ALIGNED glm::vec3   base_color;
     int32_t     base_color_texid;
     float       base_weight; 
     float       base_roughness;
     float       base_metalness;
 
     /* Specular */
-    ALIGNED glm::vec3   specular_color;
+    DEVICE_ALIGNED glm::vec3   specular_color;
     float       specular_weight;
     float       specular_roughness;
     float       specular_anisotropy;
@@ -30,9 +30,6 @@ struct OpenPBRMaterial {
     /* Geometry */
     float       geometry_opacity;
     int32_t    geometry_opacity_texid;
-
-    /* Padding for alignment */
-    float       pad[1];
 
     static OpenPBRMaterial defaultMaterial() {
         OpenPBRMaterial pbr_mat;

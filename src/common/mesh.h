@@ -9,10 +9,10 @@
 
 namespace fart {
 
-struct AligendVertex {
-    ALIGNED glm::vec3 position;
-    ALIGNED glm::vec3 normal;
-    ALIGNED glm::vec2 uv;
+struct DEVICE_ALIGNED AligendVertex {
+    DEVICE_ALIGNED glm::vec3 position;
+    DEVICE_ALIGNED glm::vec3 normal;
+    DEVICE_ALIGNED glm::vec2 uv;
     uint32_t material_id;
 };
 
