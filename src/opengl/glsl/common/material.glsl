@@ -102,7 +102,7 @@ vec3 eval_metal(const SurfaceInteraction    si,
     // base reflectance
     vec3 f0 = si.mat.base_color;
     if (si.mat.base_color_texid >= 0)
-        f0 = texture(u_textures[si.mat.base_color_texid], si.uv).rgb;
+        f0 = texture(textures[si.mat.base_color_texid], si.uv).rgb;
     f0 = f0 * si.mat.base_weight;
     return eval_ggx(si, w_i, w_o, f0);
 }
@@ -123,7 +123,7 @@ vec3 eval_diffuse(const SurfaceInteraction  si,
 
     vec3 f = si.mat.base_color;
     if (si.mat.base_color_texid >= 0)
-        f = texture(u_textures[si.mat.base_color_texid], si.uv).rgb;
+        f = texture(textures[si.mat.base_color_texid], si.uv).rgb;
     f *= si.mat.base_weight * dot(w_i, si.n) * ONE_OVER_PI;
     return f;
 }

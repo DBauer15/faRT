@@ -28,12 +28,19 @@ struct Texture {
         void clear();
 
         GLuint& getTexture() { return m_texture; }
+        GLuint64& getTextureHandle();
+        void makeResident();
+        void makeNonResident();
         void activate(GLenum texture_unit);
         void bind();
         void unbind();
 
+
     private:
+        void makeTextureHandle();
+
         GLuint m_texture {0};
+        GLuint64 m_handle {0};
 
         uint32_t m_width;
         uint32_t m_height;

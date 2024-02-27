@@ -4,8 +4,6 @@ uniform uvec2 u_viewport_size;
 uniform float u_aspect_ratio;
 uniform Camera u_camera;
 
-uniform sampler2D u_textures[31];
-
 layout(std430, binding = 0) buffer geometry0 {
     Vertex vertices [];
 };
@@ -28,4 +26,8 @@ layout(std430, binding = 4) buffer inst0 {
 
 layout(std430, binding = 5) buffer mat0 {
     OpenPBRMaterial materials [];
+};
+
+layout(std430, binding = 6) buffer tex0 {
+    sampler2D textures [];
 };

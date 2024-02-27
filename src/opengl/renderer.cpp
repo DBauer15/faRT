@@ -15,8 +15,8 @@ OpenGlRenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &win
     initGl();
     initAccelerationStructures();
     initFrameBuffer();
-    initBuffers();
     initTextures();
+    initBuffers();
     initShaders();
     initBindings();
 }
@@ -95,6 +95,7 @@ OpenGlRenderer::initBuffers() {
     m_tlas_buffer = std::make_unique<StorageBuffer>(3);
     m_instance_buffer = std::make_unique<StorageBuffer>(4);
     m_materials = std::make_unique<StorageBuffer>(5);
+    m_textures_buffer = std::make_unique<StorageBuffer>(6);
 
     m_vertices->setData(m_vertices_contiguous);
     m_indices->setData(m_indices_contiguous);
@@ -102,6 +103,13 @@ OpenGlRenderer::initBuffers() {
     m_tlas_buffer->setData(m_tlas->getNodes().data(), m_tlas->getNodesUsed());
     m_instance_buffer->setData(m_scene->getInstances());
     m_materials->setData(m_scene->getMaterials());
+
+    std::vector<GLuint64> texture_handles;
+    for (auto& texture : m_textures) {
+        texture_handles.push_back(texture.getTextureHandle());
+        texture.makeResident();
+    }
+    m_textures_buffer->setData(texture_handles);
 
     std::vector<float> quad {
         // first triangle
@@ -119,10 +127,6 @@ OpenGlRenderer::initBuffers() {
 void
 OpenGlRenderer::initTextures() {
     for (auto& image : m_scene->getTextures()) {
-        if (m_textures.size() >= 31) {
-            WARN("Maximum supported number of textures (31) reached, skipping the rest");
-            break;
-        }
         GLenum format = image.getChannels() == 4 ? GL_RGBA : GL_RGB;
         GLenum src_type = GL_UNSIGNED_BYTE;
         Texture texture(image.getWidth(),
@@ -162,6 +166,7 @@ OpenGlRenderer::initBindings() {
     m_blas_buffer->bind();
     m_tlas_buffer->bind();
     m_instance_buffer->bind();
+    m_textures_buffer->bind();
     m_vertex_array_pathtracer->addVertexAttribute(/*shader=*/*m_shader_pathtracer.get(), 
                                        /*attribute_name=*/"a_position", 
                                        /*size=*/3, 
@@ -174,6 +179,7 @@ OpenGlRenderer::initBindings() {
     m_blas_buffer->unbind();
     m_tlas_buffer->unbind();
     m_instance_buffer->unbind();
+    m_textures_buffer->unbind();
 
     m_vertex_array_postprocess = std::make_unique<VertexArray>();
     m_vertex_array_postprocess->bind();
@@ -237,15 +243,8 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
         m_shader_pathtracer->setFloat3("u_camera.eye", glm::value_ptr(eye));
         m_shader_pathtracer->setFloat3("u_camera.dir", glm::value_ptr(dir));
         m_shader_pathtracer->setFloat3("u_camera.up", glm::value_ptr(up));
-        int u_frag_color_accum_pos = 31;
-        m_accum_texture1->activate(GL_TEXTURE0 + u_frag_color_accum_pos);
+        m_accum_texture1->activate(GL_TEXTURE0);
         m_accum_texture1->bind();
-        m_shader_pathtracer->setInt("u_frag_color_accum", &u_frag_color_accum_pos);
-        for (int i = 0; i < m_textures.size(); i++) {
-            m_textures[i].activate(GL_TEXTURE0 + i);
-            m_textures[i].bind();
-            m_shader_pathtracer->setInt("u_textures[" + std::to_string(i) + "]", &i);
-        }
 
         m_vertex_array_pathtracer->bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -258,10 +257,8 @@ OpenGlRenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
 
     { // Postprocessing renderpass
         m_shader_postprocess->use();
-        int u_frag_color_accum_pos = 31;
-        m_accum_texture0->activate(GL_TEXTURE0 + u_frag_color_accum_pos);
+        m_accum_texture0->activate(GL_TEXTURE0);
         m_accum_texture0->bind();
-        m_shader_postprocess->setInt("u_frag_color_accum", &u_frag_color_accum_pos);
 
         m_vertex_array_postprocess->bind();
         glDrawArrays(GL_TRIANGLES, 0, 6);

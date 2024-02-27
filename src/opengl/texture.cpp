@@ -1,4 +1,5 @@
 #include "texture.h"
+#include "common/defs.h"
 
 namespace fart {
 
@@ -50,6 +51,11 @@ Texture::setData(uint8_t* data,
                  GLenum mag_filter,
                  GLenum wrap_s,
                  GLenum wrap_t) {
+    if (m_handle) { 
+        ERR("Attempt to modify texture for which a texture handle has been generated");
+        throw std::runtime_error("Illegal texture operation");
+    }
+
     bind();
     glTexImage2D(GL_TEXTURE_2D, 
                  0, m_internal_format,
@@ -68,6 +74,11 @@ Texture::resize(uint32_t width, uint32_t height) {
     if (width == m_width && height == m_height)
         return;
 
+    if (m_handle) { 
+        ERR("Attempt to modify texture for which a texture handle has been generated");
+        throw std::runtime_error("Illegal texture operation");
+    }
+
     m_width = width;
     m_height = height;
 
@@ -77,6 +88,23 @@ Texture::resize(uint32_t width, uint32_t height) {
 void
 Texture::clear() {
     setData(nullptr);
+}
+
+GLuint64&
+Texture::getTextureHandle() {
+    if (!m_handle)
+        makeTextureHandle();
+    return m_handle;
+}
+
+void
+Texture::makeResident() {
+    glMakeTextureHandleResidentARB(m_handle);
+}
+
+void
+Texture::makeNonResident() {
+    glMakeTextureHandleNonResidentARB(m_handle);
 }
 
 void
@@ -92,6 +120,16 @@ Texture::bind() {
 void
 Texture::unbind() {
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void
+Texture::makeTextureHandle() {
+    if (m_texture) {
+        m_handle = glGetTextureHandleARB(m_texture);
+        if (!m_handle) {
+            ERR("Unable to make texture handle");
+        }
+    }
 }
 
 }

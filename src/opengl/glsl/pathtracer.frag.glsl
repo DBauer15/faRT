@@ -1,5 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable 
+#extension GL_ARB_bindless_texture : require
 
 #define MIN_RR_DEPTH 3
 #define MAX_BOUNCES 5
