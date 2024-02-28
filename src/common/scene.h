@@ -30,6 +30,7 @@ namespace pbrt {
     struct MatteMaterial;
     struct GlassMaterial;
     struct UberMaterial;
+    struct Texture;
 }
 
 namespace fart {
@@ -67,20 +68,20 @@ struct Scene {
 
         /* PBRT Parsing */
         void loadPBRT(std::string scene);
-        void loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current, std::map<std::shared_ptr<pbrt::Object>, uint32_t>& object_map);
+        void loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current, std::map<std::shared_ptr<pbrt::Object>, uint32_t>& object_map, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map);
         void loadPBRTInstancesRecursive(std::shared_ptr<pbrt::Instance> current, const std::map<std::shared_ptr<pbrt::Object>, uint32_t>& object_map);
 
-        bool loadPBRTMaterial(std::shared_ptr<pbrt::Material> material, OpenPBRMaterial& pbr_material);
-        bool loadPBRTMaterialDisney(pbrt::DisneyMaterial& material, OpenPBRMaterial& pbr_material);
-        bool loadPBRTMaterialMixMaterial(pbrt::MixMaterial& material, OpenPBRMaterial& pbr_material);
-        bool loadPBRTMaterialMetal(pbrt::MetalMaterial& material, OpenPBRMaterial& pbr_material);
-        bool loadPBRTMaterialTranslucent(pbrt::TranslucentMaterial& material, OpenPBRMaterial& pbr_material);
-        bool loadPBRTMaterialPlastic(pbrt::PlasticMaterial& material, OpenPBRMaterial& pbr_material);
-        bool loadPBRTMaterialSubSurface(pbrt::SubSurfaceMaterial& material, OpenPBRMaterial& pbr_material);
-        bool loadPBRTMaterialMirror(pbrt::MirrorMaterial& material, OpenPBRMaterial& pbr_material);
-        bool loadPBRTMaterialMatte(pbrt::MatteMaterial& material, OpenPBRMaterial& pbr_material);
-        bool loadPBRTMaterialGlass(pbrt::GlassMaterial& material, OpenPBRMaterial& pbr_material);
-        bool loadPBRTMaterialUber(pbrt::UberMaterial& material, OpenPBRMaterial& pbr_material);
+        bool loadPBRTMaterial(std::shared_ptr<pbrt::Material> material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map);
+        bool loadPBRTMaterialDisney(pbrt::DisneyMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map);
+        bool loadPBRTMaterialMetal(pbrt::MetalMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map);
+        bool loadPBRTMaterialTranslucent(pbrt::TranslucentMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map);
+        bool loadPBRTMaterialPlastic(pbrt::PlasticMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map);
+        bool loadPBRTMaterialMirror(pbrt::MirrorMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map);
+        bool loadPBRTMaterialMatte(pbrt::MatteMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map);
+        bool loadPBRTMaterialGlass(pbrt::GlassMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map);
+        bool loadPBRTMaterialUber(pbrt::UberMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map);
+
+        bool loadPBRTTexture(std::shared_ptr<pbrt::Texture> texture);        
 
         /* Utility Functions */
         void updateSceneScale();
