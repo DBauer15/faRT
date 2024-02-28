@@ -17,10 +17,13 @@
 namespace fart {
 
 Scene::Scene(std::string scene) {
-    std::string extension = scene.substr(scene.find_last_of(".") + 1);
-    if (extension == "obj") {
+    m_base_path = std::filesystem::absolute(std::filesystem::path(scene));
+    std::string extension = m_base_path.extension();
+    m_base_path = m_base_path.parent_path();
+
+    if (extension == ".obj") {
         loadObj(scene);
-    } else if (extension == "pbrt") {
+    } else if (extension == ".pbrt") {
         loadPBRT(scene);
     } else {
         ERR("Unexpected file format " + extension);
@@ -35,7 +38,7 @@ void
 Scene::loadObj(std::string scene) {
 
     tinyobj::ObjReaderConfig reader_config;
-    reader_config.mtl_search_path = scene.substr(0, scene.find_last_of('/')+1);
+    reader_config.mtl_search_path = m_base_path.string() + "/";
 
     tinyobj::ObjReader reader;
     if (!reader.ParseFromFile(scene, reader_config)) { 
@@ -84,9 +87,7 @@ Scene::loadObj(std::string scene) {
             if (texture_index_map.find(material.diffuse_texname) != texture_index_map.end()) {
                 pbr_mat.base_color_texid = texture_index_map.at(material.diffuse_texname);
             } else {
-                std::string texture_filename = reader_config.mtl_search_path + material.diffuse_texname;
-                // TODO: Use std::filesystem::Path
-                std::replace(texture_filename.begin(), texture_filename.end(), '\\', '/');
+                std::filesystem::path texture_filename = getAbsolutePath(material.diffuse_texname);
                 Image diffuse_texture(texture_filename);
                 if (diffuse_texture.isValid()) { 
                     m_textures.push_back(std::move(diffuse_texture));
@@ -341,6 +342,14 @@ Scene::luminance(glm::vec3 c) {
     return 0.299f*c.r + 0.587f*c.g + 0.114f*c.b;
 }
 
+std::filesystem::path
+Scene::getAbsolutePath(std::filesystem::path p) {
+    if (p.is_absolute()) 
+        return p;
+
+    return m_base_path / p;
+}
+
 void
 Scene::loadPBRT(std::string scene) {
 
@@ -574,7 +583,8 @@ Scene::loadPBRTTexture(std::shared_ptr<pbrt::Texture> texture) {
         WARN("Unsupported texture type '" + texture->toString() + "'");
         return false;
     }
-    Image img(image_texture->fileName); 
+    std::filesystem::path texture_filename = getAbsolutePath(image_texture->fileName);
+    Image img(texture_filename); 
     m_textures.push_back(std::move(img));
     LOG("Read texture image '" + image_texture->fileName + "'");
     return true;

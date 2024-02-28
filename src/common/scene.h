@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 #include <memory>
-
+#include <filesystem>
 
 #include "mesh.h"
 #include "material.h"
@@ -86,6 +86,7 @@ struct Scene {
         /* Utility Functions */
         void updateSceneScale();
         float luminance(glm::vec3 c);
+        std::filesystem::path getAbsolutePath(std::filesystem::path p);
 
         /* Scene Data */
         std::vector<Object> m_objects;
@@ -94,6 +95,7 @@ struct Scene {
         std::vector<Image> m_textures;
 
         float m_scene_scale;
+        std::filesystem::path m_base_path;
 };
 
 }
