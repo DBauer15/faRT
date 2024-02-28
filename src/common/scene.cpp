@@ -573,7 +573,23 @@ Scene::loadPBRTMaterialGlass(pbrt::GlassMaterial& material, OpenPBRMaterial& pbr
 
 bool 
 Scene::loadPBRTMaterialUber(pbrt::UberMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map) {
-    return false;
+    pbr_material.base_color = glm::make_vec3(&material.kd.x);
+    pbr_material.specular_color = glm::make_vec3(&material.ks.x);
+    pbr_material.specular_ior = material.index;
+    pbr_material.specular_roughness = material.roughness;
+    pbr_material.transmission_weight = luminance(glm::make_vec3(&material.kt.x));
+
+    if (material.map_kd) {
+        if (texture_index_map.find(material.map_kd) == texture_index_map.end()) {
+            if (loadPBRTTexture(material.map_kd)) {
+                pbr_material.base_color_texid = m_textures.size() - 1;
+                texture_index_map[material.map_kd] = m_textures.size() - 1;
+            }
+        } else {
+            pbr_material.base_color_texid = texture_index_map[material.map_kd];
+        }
+    }
+    return true;
 }
 
 bool
