@@ -364,8 +364,9 @@ Scene::loadPBRT(std::string scene) {
 
     // Import objects
     std::map<std::shared_ptr<pbrt::Object>, uint32_t> object_map;
+    std::map<std::shared_ptr<pbrt::Material>, uint32_t> material_map;
     std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map;
-    loadPBRTObjectsRecursive(pbrt_scene->world, object_map, texture_index_map);
+    loadPBRTObjectsRecursive(pbrt_scene->world, object_map, material_map, texture_index_map);
 
     // Import instances
     for(auto& instance : pbrt_scene->world->instances)
@@ -380,7 +381,10 @@ Scene::loadPBRT(std::string scene) {
 }
 
 void
-Scene::loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current, std::map<std::shared_ptr<pbrt::Object>, uint32_t>& object_map, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map) {
+Scene::loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current, 
+                                std::map<std::shared_ptr<pbrt::Object>, uint32_t>& object_map, 
+                                std::map<std::shared_ptr<pbrt::Material>, uint32_t>& material_map,
+                                std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     if (!current || object_map.find(current) != object_map.end()) return;
 
     Object obj;
@@ -391,9 +395,12 @@ Scene::loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current, std::map<
 
         uint32_t material_id = 0;
         OpenPBRMaterial pbr_material = OpenPBRMaterial::defaultMaterial();
-        if (loadPBRTMaterial(mesh->material, pbr_material, texture_index_map)) {
+        if (material_map.find(mesh->material) != material_map.end()) {
+            material_id = material_map[mesh->material];
+        } else if (loadPBRTMaterial(mesh->material, pbr_material, texture_index_map)) {
             m_materials.push_back(pbr_material);
             material_id = m_materials.size() - 1;
+            material_map[mesh->material] = m_materials.size() - 1;
             LOG("Parsed material '" + mesh->material->name + "'");
         }
 
@@ -436,7 +443,7 @@ Scene::loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current, std::map<
     }
 
     for (auto& instance : current->instances) {
-        loadPBRTObjectsRecursive(instance->object, object_map, texture_index_map);
+        loadPBRTObjectsRecursive(instance->object, object_map, material_map, texture_index_map);
     }
 }
 
@@ -464,7 +471,7 @@ Scene::loadPBRTInstancesRecursive(std::shared_ptr<pbrt::Instance> current, const
 }
 
 bool 
-Scene::loadPBRTMaterial(std::shared_ptr<pbrt::Material> material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map) {
+Scene::loadPBRTMaterial(std::shared_ptr<pbrt::Material> material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     if (std::dynamic_pointer_cast<pbrt::DisneyMaterial>(material))
         return loadPBRTMaterialDisney(*std::dynamic_pointer_cast<pbrt::DisneyMaterial>(material), pbr_material, texture_index_map);
     else if (std::dynamic_pointer_cast<pbrt::MetalMaterial>(material))
@@ -473,6 +480,8 @@ Scene::loadPBRTMaterial(std::shared_ptr<pbrt::Material> material, OpenPBRMateria
         return loadPBRTMaterialTranslucent(*std::dynamic_pointer_cast<pbrt::TranslucentMaterial>(material), pbr_material, texture_index_map);
     else if (std::dynamic_pointer_cast<pbrt::PlasticMaterial>(material))
         return loadPBRTMaterialPlastic(*std::dynamic_pointer_cast<pbrt::PlasticMaterial>(material), pbr_material, texture_index_map);
+    else if (std::dynamic_pointer_cast<pbrt::SubstrateMaterial>(material))
+        return loadPBRTMaterialSubstrate(*std::dynamic_pointer_cast<pbrt::SubstrateMaterial>(material), pbr_material, texture_index_map);
     else if (std::dynamic_pointer_cast<pbrt::MirrorMaterial>(material))
         return loadPBRTMaterialMirror(*std::dynamic_pointer_cast<pbrt::MirrorMaterial>(material), pbr_material, texture_index_map);
     else if (std::dynamic_pointer_cast<pbrt::MatteMaterial>(material))
@@ -486,12 +495,12 @@ Scene::loadPBRTMaterial(std::shared_ptr<pbrt::Material> material, OpenPBRMateria
 }
 
 bool 
-Scene::loadPBRTMaterialDisney(pbrt::DisneyMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map) {
+Scene::loadPBRTMaterialDisney(pbrt::DisneyMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     return false;
 }
 
 bool 
-Scene::loadPBRTMaterialMetal(pbrt::MetalMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map) {
+Scene::loadPBRTMaterialMetal(pbrt::MetalMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     // TODO: It is unclear if this mapping for `k` is appropriate as components in both `k` and `eta` regularly exceed 1
     pbr_material.base_color = glm::normalize(glm::make_vec3(&material.k.x));
     pbr_material.specular_color = glm::normalize(glm::make_vec3(&material.k.x));
@@ -508,12 +517,12 @@ Scene::loadPBRTMaterialMetal(pbrt::MetalMaterial& material, OpenPBRMaterial& pbr
 }
 
 bool 
-Scene::loadPBRTMaterialTranslucent(pbrt::TranslucentMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map) {
+Scene::loadPBRTMaterialTranslucent(pbrt::TranslucentMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     return false;
 }
 
 bool 
-Scene::loadPBRTMaterialPlastic(pbrt::PlasticMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map) {
+Scene::loadPBRTMaterialPlastic(pbrt::PlasticMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     pbr_material.base_color = glm::make_vec3(&material.kd.x);
     pbr_material.specular_color = glm::make_vec3(&material.ks.x);
     if (material.remapRoughness) {
@@ -525,44 +534,56 @@ Scene::loadPBRTMaterialPlastic(pbrt::PlasticMaterial& material, OpenPBRMaterial&
         pbr_material.specular_roughness = material.roughness;
     }
 
-    if (material.map_kd) {
-        if (texture_index_map.find(material.map_kd) == texture_index_map.end()) {
-            if (loadPBRTTexture(material.map_kd)) {
-                pbr_material.base_color_texid = m_textures.size() - 1;
-                texture_index_map[material.map_kd] = m_textures.size() - 1;
-            }
-        } else {
-            pbr_material.base_color_texid = texture_index_map[material.map_kd];
-        }
+    uint32_t texture_idx;
+    if (material.map_kd && loadPBRTTexture(material.map_kd, texture_index_map, texture_idx)) {
+        pbr_material.base_color_texid = texture_idx;
     }
     return true;
 }
 
 bool 
-Scene::loadPBRTMaterialMirror(pbrt::MirrorMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map) {
+Scene::loadPBRTMaterialSubstrate(pbrt::SubstrateMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
+    // TODO: This is similar to the plastic material. For now, treat it the same.
+    pbr_material.base_color = glm::make_vec3(&material.kd.x);
+    pbr_material.specular_color = glm::make_vec3(&material.ks.x);
+
+    // TODO: Anisotropic roughness is currently not supported. Average both values and use that for now.
+    float roughness = (material.uRoughness + material.vRoughness) / 2.f;
+    if (material.remapRoughness) {
+        roughness = std::max(roughness, 1e-3f);
+        float x = std::log(roughness);
+        pbr_material.specular_roughness = 1.62142f + 0.819955f * x + 0.1734f * x * x +
+               0.0171201f * x * x * x + 0.000640711f * x * x * x * x;
+    } else {
+        pbr_material.specular_roughness = roughness;
+    }
+
+    uint32_t texture_idx;
+    if (material.map_kd && loadPBRTTexture(material.map_kd, texture_index_map, texture_idx)) {
+        pbr_material.base_color_texid = texture_idx;
+    }
+    return true;
+}
+
+bool 
+Scene::loadPBRTMaterialMirror(pbrt::MirrorMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     return false;
 }
 
 bool 
-Scene::loadPBRTMaterialMatte(pbrt::MatteMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map) {
+Scene::loadPBRTMaterialMatte(pbrt::MatteMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     pbr_material.base_color = glm::make_vec3(&material.kd.x);
     pbr_material.specular_roughness = 1.f;
     
-    if (material.map_kd) {
-        if (texture_index_map.find(material.map_kd) == texture_index_map.end()) {
-            if (loadPBRTTexture(material.map_kd)) {
-                pbr_material.base_color_texid = m_textures.size() - 1;
-                texture_index_map[material.map_kd] = m_textures.size() - 1;
-            }
-        } else {
-            pbr_material.base_color_texid = texture_index_map[material.map_kd];
-        }
+    uint32_t texture_idx;
+    if (material.map_kd && loadPBRTTexture(material.map_kd, texture_index_map, texture_idx)) {
+        pbr_material.base_color_texid = texture_idx;
     }
     return true;
 }
 
 bool 
-Scene::loadPBRTMaterialGlass(pbrt::GlassMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map) {
+Scene::loadPBRTMaterialGlass(pbrt::GlassMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     //TODO: See metal material. Unclear if mapping `kr` like this makes sense
     pbr_material.specular_color = glm::make_vec3(&material.kr.x);
     pbr_material.specular_roughness = 0.f;
@@ -572,37 +593,103 @@ Scene::loadPBRTMaterialGlass(pbrt::GlassMaterial& material, OpenPBRMaterial& pbr
 }
 
 bool 
-Scene::loadPBRTMaterialUber(pbrt::UberMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t> texture_index_map) {
+Scene::loadPBRTMaterialUber(pbrt::UberMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     pbr_material.base_color = glm::make_vec3(&material.kd.x);
     pbr_material.specular_color = glm::make_vec3(&material.ks.x);
     pbr_material.specular_ior = material.index;
     pbr_material.specular_roughness = material.roughness;
     pbr_material.transmission_weight = luminance(glm::make_vec3(&material.kt.x));
 
-    if (material.map_kd) {
-        if (texture_index_map.find(material.map_kd) == texture_index_map.end()) {
-            if (loadPBRTTexture(material.map_kd)) {
-                pbr_material.base_color_texid = m_textures.size() - 1;
-                texture_index_map[material.map_kd] = m_textures.size() - 1;
-            }
-        } else {
-            pbr_material.base_color_texid = texture_index_map[material.map_kd];
-        }
+    uint32_t texture_idx;
+    if (material.map_kd && loadPBRTTexture(material.map_kd, texture_index_map, texture_idx)) {
+        pbr_material.base_color_texid = texture_idx;
     }
     return true;
 }
 
 bool
-Scene::loadPBRTTexture(std::shared_ptr<pbrt::Texture> texture) {
+Scene::loadPBRTTexture(std::shared_ptr<pbrt::Texture> texture, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map, uint32_t& texture_index) {
+    if (texture_index_map.find(texture) != texture_index_map.end()) {
+        texture_index = texture_index_map[texture];
+        return true;
+    }
+
+    std::shared_ptr<pbrt::ConstantTexture> constant_texture = std::dynamic_pointer_cast<pbrt::ConstantTexture>(texture);
+    std::shared_ptr<pbrt::ScaleTexture> scale_texture = std::dynamic_pointer_cast<pbrt::ScaleTexture>(texture);
+    std::shared_ptr<pbrt::MixTexture> mix_texture = std::dynamic_pointer_cast<pbrt::MixTexture>(texture);
     std::shared_ptr<pbrt::ImageTexture> image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(texture);
-    if (!image_texture) {
+    if (!constant_texture && !scale_texture && !mix_texture && !image_texture) {
         WARN("Unsupported texture type '" + texture->toString() + "'");
         return false;
     }
-    std::filesystem::path texture_filename = getAbsolutePath(image_texture->fileName);
-    Image img(texture_filename); 
-    m_textures.push_back(std::move(img));
-    LOG("Read texture image '" + image_texture->fileName + "'");
-    return true;
+
+    if (constant_texture) {
+        glm::vec3 color = glm::make_vec3(&constant_texture->value.x);
+        Image img(color);
+        m_textures.push_back(std::move(img));
+        LOG("Read constant image (" + std::to_string(color.x) + ", " + std::to_string(color.y) + ", " + std::to_string(color.z) + ")");
+        texture_index_map[texture] = m_textures.size() - 1;
+        texture_index = m_textures.size() - 1;
+        return true;
+    }
+
+    if (scale_texture) {
+        uint32_t tex1_idx, tex2_idx;
+        bool has_tex1 = scale_texture->tex1 && loadPBRTTexture(scale_texture->tex1, texture_index_map, tex1_idx);
+        bool has_tex2 = scale_texture->tex2 && loadPBRTTexture(scale_texture->tex2, texture_index_map, tex2_idx);
+
+        if (has_tex1 && !has_tex2) {
+            m_textures[tex1_idx].scale(glm::make_vec3(&scale_texture->scale2.x));
+            texture_index = tex1_idx;
+        } else if (has_tex2 && !has_tex1) {
+            m_textures[tex2_idx].scale(glm::make_vec3(&scale_texture->scale1.x));
+            texture_index = tex2_idx;
+        } else if (has_tex1 && has_tex2) {
+            auto& tex2 = m_textures[tex2_idx];
+            m_textures[tex1_idx].scale(tex2);
+            texture_index = tex1_idx;
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+
+    if (mix_texture) {
+        uint32_t tex1_idx, tex2_idx;
+        bool has_tex1 = mix_texture->tex1 && loadPBRTTexture(mix_texture->tex1, texture_index_map, tex1_idx);
+        bool has_tex2 = mix_texture->tex2 && loadPBRTTexture(mix_texture->tex2, texture_index_map, tex2_idx);
+
+        if (has_tex1 && !has_tex2) {
+            m_textures[tex1_idx].mix(glm::make_vec3(&mix_texture->scale2.x), 
+                                  glm::make_vec3(&mix_texture->amount.x));
+            texture_index = tex1_idx;
+        } else if (has_tex2 && !has_tex1) {
+            m_textures[tex2_idx].mix(glm::make_vec3(&mix_texture->scale1.x), 
+                                  glm::make_vec3(&mix_texture->amount.x));
+            texture_index = tex2_idx;
+        } else if (has_tex1 && has_tex2) {
+            auto& tex2 = m_textures[tex2_idx];
+            m_textures[tex1_idx].mix(tex2, 
+                                  glm::make_vec3(&mix_texture->amount.x));
+            texture_index = tex1_idx;
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+
+    if (image_texture) {
+        std::filesystem::path texture_filename = getAbsolutePath(image_texture->fileName);
+        Image img(texture_filename); 
+        m_textures.push_back(std::move(img));
+        LOG("Read texture image '" + image_texture->fileName + "'");
+        texture_index_map[texture] = m_textures.size() - 1;
+        texture_index = m_textures.size() - 1;
+        return true;
+    }
+
+    return false;
 }
 }
