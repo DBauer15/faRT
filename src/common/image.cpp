@@ -15,16 +15,17 @@ Image::Image(std::string filename) {
     uint8_t* image = stbi_load(filename.c_str(), &m_width, &m_height, &m_channels, 4);
     m_channels = 4;
 
+    if (image == nullptr) {
+        ERR("Unable to load image '" + filename + "'");
+        return;
+    }
+
     size_t image_size = sizeof(uint8_t) * m_width * m_height * m_channels;
     m_image = (uint8_t*)std::malloc(image_size);
     std::memcpy(m_image, image, image_size);
 
     stbi_image_free(image);
 
-    if (m_image == nullptr) {
-        ERR("Unable to load image '" + filename + "'");
-        return;
-    }
 }
 
 Image::Image(glm::vec3 color) {
@@ -62,7 +63,7 @@ Image::operator=(Image&& other) {
 
 Image::~Image() {
     if (m_image != nullptr)
-        stbi_image_free(m_image);
+        std::free(m_image);
 }
 
 void

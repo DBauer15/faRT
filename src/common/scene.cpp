@@ -344,10 +344,34 @@ Scene::luminance(glm::vec3 c) {
 
 std::filesystem::path
 Scene::getAbsolutePath(std::filesystem::path p) {
-    if (p.is_absolute()) 
-        return p;
+    std::filesystem::path result = p;
 
-    return m_base_path / p;
+#if !defined(_WIN32)
+    // On POSIX systems '\' is a valid character in filenames
+    // We account for this possibility by first checking if the given path exists, and if not return an alternative with '\' replaced by '/'
+    // If the alternative path should also not exist, there must be an error in the given path
+    std::string result_no_backslash_str = p.string();
+    std::replace(result_no_backslash_str.begin(), result_no_backslash_str.end(), '\\', '/');
+    std::filesystem::path result_no_backslash(result_no_backslash_str);
+
+    if (result.is_absolute()) {
+        if (!std::filesystem::exists(result)) {
+            return result_no_backslash;
+        }
+        return result;
+    }
+
+    result = m_base_path / result;
+    result_no_backslash = m_base_path / result_no_backslash;
+    if (!std::filesystem::exists(result)) {
+        return result_no_backslash;
+    }
+#elif
+    if (result.is_absolute()) {
+        return result
+    }
+    return m_base_path / result;
+#endif
 }
 
 void
@@ -586,7 +610,7 @@ bool
 Scene::loadPBRTMaterialGlass(pbrt::GlassMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     //TODO: See metal material. Unclear if mapping `kr` like this makes sense
     pbr_material.specular_color = glm::make_vec3(&material.kr.x);
-    pbr_material.specular_roughness = 0.f;
+    pbr_material.specular_roughness = 1e-3f;
     pbr_material.specular_ior = material.index;
     pbr_material.transmission_weight = 1.f;
     return true;
