@@ -45,13 +45,12 @@ bool intersectTriangle(inout Ray ray, inout SurfaceInteraction si, uint first_in
             vertex_normal = vertex_normal * (dot(face_normal, -ray.d) < 0.f ? -1.f : 1.f);
             face_normal = face_normal * (dot(face_normal, -ray.d) < 0.f ? -1.f : 1.f);
 
-            if (mat.base_color_texid >= 0 && texture(textures[mat.base_color_texid], uv).a == 0.f) return false;
+            if (mat.base_color_texid >= 0 && texture(textures[mat.base_color_texid], uv).a < 0.001f) return false;
             si.uv = uv;
             si.n = vertex_normal;
             si.mat = mat;
             ray.t = min( ray.t, t );
 
-            si.w_o = normalize(-ray.d);
             si.valid = true;
             return true;
         }
@@ -119,6 +118,12 @@ SurfaceInteraction intersect(Ray ray) {
             ray.rD = 1.f / ray.d;
 
             intersectBLAS(ray, si, node.blas);
+            if (ray.t < ray_backup.t) {
+                si.w_o = -ray_backup.d;
+
+                // transform object-space normal to world
+                si.n = normalize((inverse(xfm) * vec4(si.n, 0.f)).xyz);
+            }
             ray_backup.t = ray.t;
             ray = ray_backup;
 
