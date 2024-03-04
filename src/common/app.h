@@ -32,6 +32,7 @@ struct App {
     private:
         glm::vec3 keyboardInputToMovementVector();
 
+        float m_fps { -1.f };
         float m_fps_ema { -1.f };
         long long m_frame_count { 0 };
         

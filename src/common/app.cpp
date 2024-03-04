@@ -49,8 +49,10 @@ App::run() {
         // render pass
         RenderStats render_stats;
         m_renderer->render(m_camera->eye(), m_camera->dir(), m_camera->up(), render_stats);
-        if (m_fps_ema < 0.f) m_fps_ema = (1000.f / render_stats.frame_time_ms); 
-        m_fps_ema = 0.05f * (1000.f / render_stats.frame_time_ms) + 0.95f * m_fps_ema;
+
+        m_fps = (1000.f / render_stats.frame_time_ms);
+        if (m_fps_ema < 0.f) m_fps_ema = m_fps; 
+        m_fps_ema = 0.05f * m_fps + 0.95f * m_fps_ema;
         if (m_fps_ema / ( m_frame_count + 1 ) < 5.f) {
             m_window->setWindowTitle("FaRT - " + m_renderer->name() + " @ " + std::to_string(int(m_fps_ema)) + " fps");
             m_frame_count = 0;
@@ -65,7 +67,7 @@ App::run() {
 glm::vec3
 App::keyboardInputToMovementVector() {
     glm::vec3 movement = glm::vec3(0);
-    float s = 0.001f;
+    float s = .1f * (1.f / m_fps);
     movement += glm::vec3(s,0,0) * float(m_window->isKeyPressed(GLFW_KEY_A));
     movement += glm::vec3(-s,0,0) * float(m_window->isKeyPressed(GLFW_KEY_D));
     movement += glm::vec3(0,0,-s) * float(m_window->isKeyPressed(GLFW_KEY_W));
