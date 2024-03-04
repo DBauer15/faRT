@@ -319,18 +319,25 @@ void
 Scene::updateSceneScale() {
     float min_vertex = 1e30f;
     float max_vertex = -1e30f;
+    glm::vec3 current_min, current_max;
 
-    for (auto& object : m_objects) {
-        for (auto& geometry : object.geometries) {
-            min_vertex = std::min(min_vertex, glm::compMin(std::min_element(geometry.vertices.begin(), geometry.vertices.end(),
+    for (auto& instance : m_instances) {
+        glm::mat4 instance_to_world = glm::inverse(instance.world_to_instance);
+        for (auto& geometry : m_objects[instance.object_id].geometries) {
+            current_min = std::min_element(geometry.vertices.begin(), geometry.vertices.end(),
                             [](auto v0, auto v1) {
                                 return glm::compMin(v0.position) < glm::compMin(v1.position);
-                            })->position));
+                            })->position;
+            current_min = glm::vec3(instance_to_world * glm::vec4(current_min, 1.f));
 
-            max_vertex = std::max(min_vertex, glm::compMax(std::max_element(geometry.vertices.begin(), geometry.vertices.end(),
+            current_max = std::max_element(geometry.vertices.begin(), geometry.vertices.end(),
                             [](auto v0, auto v1) {
                                 return glm::compMax(v0.position) < glm::compMax(v1.position);
-                            })->position));
+                            })->position;
+            current_max = glm::vec3(instance_to_world * glm::vec4(current_max, 1.f));
+
+            min_vertex = std::min(min_vertex, glm::compMin(current_min));
+            max_vertex = std::max(max_vertex, glm::compMax(current_max));
         }
     }
 
@@ -354,18 +361,15 @@ Scene::getAbsolutePath(std::filesystem::path p) {
     std::replace(result_no_backslash_str.begin(), result_no_backslash_str.end(), '\\', '/');
     std::filesystem::path result_no_backslash(result_no_backslash_str);
 
-    if (result.is_absolute()) {
-        if (!std::filesystem::exists(result)) {
-            return result_no_backslash;
-        }
-        return result;
+    if (!result.is_absolute()) {
+        result = m_base_path / result;
+        result_no_backslash = m_base_path / result_no_backslash;
     }
 
-    result = m_base_path / result;
-    result_no_backslash = m_base_path / result_no_backslash;
     if (!std::filesystem::exists(result)) {
         return result_no_backslash;
     }
+    return result;
 #elif
     if (result.is_absolute()) {
         return result
