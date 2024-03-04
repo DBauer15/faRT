@@ -76,6 +76,7 @@ struct MetalRenderer : Renderer {
         MTL::Buffer* m_materials             { nullptr };
         MTL::Buffer* m_textures              { nullptr };
         std::vector<Texture> m_texture_list;
+        uint32_t m_resources_geometry_stride;
 
         // Private helper functions
         void initMetal();

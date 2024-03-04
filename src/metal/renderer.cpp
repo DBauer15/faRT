@@ -28,8 +28,8 @@ MetalRenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &wind
 
     initMetal();
     initFrameBuffer();
-    initPipeline();
     initBuffers();
+    initPipeline();
     initIntersectionFunctionTable();
     initAccelerationStructure();
 }
@@ -63,29 +63,33 @@ MetalRenderer::initFrameBuffer() {
 
 void
 MetalRenderer::initBuffers() {
-    size_t n_geomtries = 0;
     for (auto& object : m_scene->getObjects()) {
         MetalObject metal_object(m_device, object);
-        n_geomtries += metal_object.getGeometries().size();
+        if (metal_object.getGeometries().size() > m_resources_geometry_stride)
+            m_resources_geometry_stride = metal_object.getGeometries().size();
         m_objects.push_back(metal_object);
     }
 
     m_uniforms = m_device->newBuffer(sizeof(MetalRendererUniforms), MTL::StorageModeShared);
 
-    size_t resource_stride = sizeof(uint64_t) * 2; // vertices and indices pointers
-    m_resources = m_device->newBuffer(resource_stride * n_geomtries, MTL::StorageModeManaged);
-    size_t geometry_count = 0;
-    for (auto& object : m_objects) {
-        for(auto& geometry : object.getGeometries()) {
-            uint64_t *resource_handle = (uint64_t*)((uint8_t*)m_resources->contents() + resource_stride * geometry_count);
+    uint32_t resources_stride = m_resources_geometry_stride * sizeof(uint64_t) * 2; // vertices and indices pointers
+    uint32_t geometry_stride = sizeof(uint64_t) * 2;
+
+    m_resources = m_device->newBuffer(resources_stride * m_scene->getInstances().size(), MTL::StorageModeManaged);
+    size_t instance_count = 0;
+    for (auto& instance : m_scene->getInstances()) {
+        size_t geometry_count = 0;
+        for (auto& geometry : m_objects[instance.object_id].getGeometries()) {
+            uint64_t *resource_handle = (uint64_t*)((uint8_t*)m_resources->contents() + instance_count * resources_stride + geometry_count * geometry_stride);
             const auto& resources = geometry.getResources();
             for (size_t i = 0; i < resources.size(); i++) {
                 resource_handle[i] = ((MTL::Buffer*)resources[i])->gpuAddress();
             }
             geometry_count += 1;
         }
+        instance_count += 1;
     }
-    m_resources->didModifyRange(NS::Range(0, resource_stride * n_geomtries));
+    m_resources->didModifyRange(NS::Range(0, resources_stride * m_scene->getInstances().size()));
 
     m_materials = m_device->newBuffer(m_scene->getMaterials().data(), m_scene->getMaterials().size() * sizeof(OpenPBRMaterial), MTL::StorageModeShared);
     m_materials->didModifyRange(NS::Range(0, m_scene->getMaterials().size() * sizeof(OpenPBRMaterial)));
@@ -265,8 +269,11 @@ MetalRenderer::initPipeline() {
     NS::Error* error;
     
     // Initialize the compute pipeline state that will perform the path tracing step and store the result in a texture
-    MTL::Function* pathtracer_function = m_library->newFunction(NS::String::string("pathtracer", NS::StringEncoding::ASCIIStringEncoding));
-    MTL::Function* pathtracer_intersection_function = m_library->newFunction(NS::String::string("alphatest", NS::StringEncoding::ASCIIStringEncoding));
+    MTL::FunctionConstantValues *constants = MTL::FunctionConstantValues::alloc()->init();
+    constants->setConstantValue(&m_resources_geometry_stride, MTL::DataTypeUInt, (uint32_t)0);
+
+    MTL::Function* pathtracer_function = m_library->newFunction(NS::String::string("pathtracer", NS::StringEncoding::ASCIIStringEncoding), constants, &error);
+    MTL::Function* pathtracer_intersection_function = m_library->newFunction(NS::String::string("alphatest", NS::StringEncoding::ASCIIStringEncoding), constants, &error);
     MTL::LinkedFunctions* linked_functions = MTL::LinkedFunctions::alloc()->init();
     linked_functions->setFunctions(NS::Array::array((const NS::Object*) pathtracer_intersection_function));
 

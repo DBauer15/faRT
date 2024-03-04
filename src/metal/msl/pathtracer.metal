@@ -12,6 +12,8 @@
 using namespace metal;
 using namespace raytracing;
 
+constant uint resources_geometry_stride      [[function_constant(0)]];
+
 float3 getNormal(Vertex v0, Vertex v1, Vertex v2, float3 bary) {
     float3 n0 = v0.normal;
     float3 n1 = v1.normal;
@@ -72,13 +74,12 @@ float4 traceRay(thread ray                                            &ray,
         uint geometry_index = intersection.geometry_id;
         uint primitive_index = intersection.primitive_id;
 
-        device Resource & triangle_resource = *(device Resource *)((device char *)resources + sizeof(Resource) * geometry_index);
-        Vertex triangle[3];
+        device Resource & triangle_resource = resources[instance_index * resources_geometry_stride + geometry_index];
 
-        triangle[0]  =   triangle_resource.vertices[triangle_resource.indices[primitive_index * 3 + 0]];
-        triangle[1]  =   triangle_resource.vertices[triangle_resource.indices[primitive_index * 3 + 1]];
-        triangle[2]  =   triangle_resource.vertices[triangle_resource.indices[primitive_index * 3 + 2]];
-        float3 normal = getNormal(triangle[0], triangle[1], triangle[2], bary);
+        Vertex vertex0 =   triangle_resource.vertices[triangle_resource.indices[primitive_index * 3 + 0]];
+        Vertex vertex1 =   triangle_resource.vertices[triangle_resource.indices[primitive_index * 3 + 1]];
+        Vertex vertex2 =   triangle_resource.vertices[triangle_resource.indices[primitive_index * 3 + 2]];
+        float3 normal = getNormal(vertex0, vertex1, vertex2, bary);
 
         float4x4 object_to_world(1.0f);
         for (int column = 0; column < 4; column++)
@@ -87,14 +88,14 @@ float4 traceRay(thread ray                                            &ray,
         
         normal = normal * (intersection.triangle_front_facing ? 1.f : -1.f);
         normal = normalize((object_to_world * float4(normal, 0.f)).xyz);
-        float2 uv = getUV(triangle[0], triangle[1], triangle[2], bary);
+        float2 uv = getUV(vertex0, vertex1, vertex2, bary);
 
         // Make SurfaceInteraction
         si.p = ray.origin + intersection.distance * ray.direction;
         si.n = normal;
         si.uv = uv;
         si.front_face = intersection.triangle_front_facing;
-        si.mat = materials[triangle[0].material_id];
+        si.mat = materials[vertex0.material_id];
         si.textures = textures;
         si.w_o = -ray.direction;
         si.w_i = bsdf_sample(si, f_pdf, rng);
