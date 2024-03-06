@@ -732,6 +732,7 @@ Scene::loadPBRTTexture(std::shared_ptr<pbrt::Texture> texture, std::map<std::sha
 // Adapted from https://github.com/mmp/pbrt-v3/blob/13d871faae88233b327d04cda24022b8bb0093ee/src/core/spectrum.h#L289
 glm::vec3
 Scene::loadPBRTSpectrum(pbrt::Spectrum& spectrum) {
+    if (spectrum.spd.size() == 0) return glm::vec3(0.f);
     int sampled_lambda_start = 400, sampled_lambda_end = 700;
     int n_spectral_samples = 60;
     std::vector<float> lambdas, values;
