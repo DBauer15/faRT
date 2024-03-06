@@ -30,6 +30,7 @@ namespace pbrt {
     struct GlassMaterial;
     struct UberMaterial;
     struct Texture;
+    struct Spectrum;
 }
 
 namespace fart {
@@ -85,6 +86,8 @@ struct Scene {
         bool loadPBRTMaterialUber(pbrt::UberMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map);
 
         bool loadPBRTTexture(std::shared_ptr<pbrt::Texture> texture, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map, uint32_t& texture_index);        
+
+        glm::vec3 loadPBRTSpectrum(pbrt::Spectrum& spectrum);
 
         /* Utility Functions */
         void updateSceneScale();

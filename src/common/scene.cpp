@@ -1,5 +1,6 @@
 #include "defs.h"
 #include "scene.h"
+#include "cie.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -529,9 +530,16 @@ Scene::loadPBRTMaterialDisney(pbrt::DisneyMaterial& material, OpenPBRMaterial& p
 
 bool 
 Scene::loadPBRTMaterialMetal(pbrt::MetalMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
+    pbr_material.base_metalness = 1.f;
     // TODO: It is unclear if this mapping for `k` is appropriate as components in both `k` and `eta` regularly exceed 1
     pbr_material.base_color = glm::normalize(glm::make_vec3(&material.k.x));
     pbr_material.specular_color = glm::normalize(glm::make_vec3(&material.k.x));
+
+    glm::vec3 k = loadPBRTSpectrum(material.spectrum_k);
+    if (k != glm::vec3(0.f)) {
+        pbr_material.base_color = k;
+        pbr_material.specular_color = k;
+    }
 
     if (material.remapRoughness) {
         float roughness = std::max(material.roughness, 1e-3f);
@@ -720,4 +728,80 @@ Scene::loadPBRTTexture(std::shared_ptr<pbrt::Texture> texture, std::map<std::sha
 
     return false;
 }
+
+// Adapted from https://github.com/mmp/pbrt-v3/blob/13d871faae88233b327d04cda24022b8bb0093ee/src/core/spectrum.h#L289
+glm::vec3
+Scene::loadPBRTSpectrum(pbrt::Spectrum& spectrum) {
+    int sampled_lambda_start = 400, sampled_lambda_end = 700;
+    int n_spectral_samples = 60;
+    std::vector<float> lambdas, values;
+    glm::vec3 xyz(0.f), rgb(0.f);
+    std::vector<float> c (n_spectral_samples, 0.f);
+    std::vector<float> X (n_spectral_samples, 0.f), Y (n_spectral_samples, 0.f), Z (n_spectral_samples, 0.f);
+
+    for (auto& el : spectrum.spd) {
+        lambdas.push_back(el.first);
+        values.push_back(el.second);
+    }
+
+    auto averageSample = [](const std::vector<float>& lambdas, const std::vector<float>& values, float lambda0, float lambda1) {
+        size_t n = lambdas.size();
+        if (lambda1 <= lambdas[0]) return values[0];
+        if (lambda0 >= lambdas[n - 1]) return values[n - 1];
+        if (n == 1) return values[0];
+        float sum = 0;
+
+        if (lambda0 < lambdas[0]) sum += values[0] * (lambdas[0] - lambda0);
+        if (lambda1 > lambdas[n - 1])
+            sum += values[n - 1] * (lambda1 - lambdas[n - 1]);
+
+        int i = 0;
+        while (lambda0 > lambdas[i + 1]) ++i;
+        if (i+1 >= n) return sum;
+
+        auto interp = [lambdas, values](float w, int i) {
+            float weight = (w - lambdas[i]) / (lambdas[i+1] - lambdas[i]);
+            return (1.f - weight) * values[i] + weight * values[i+1];
+        };
+
+        for (; i + 1 < n && lambda1 >= lambdas[i]; ++i) {
+            float segLambdaStart = std::max(lambda0, lambdas[i]);
+            float segLambdaEnd = std::min(lambda1, lambdas[i + 1]);
+            sum += 0.5 * (interp(segLambdaStart, i) + interp(segLambdaEnd, i)) *
+                (segLambdaEnd - segLambdaStart);
+        }
+
+        return sum / (lambda1 - lambda0);
+    };
+
+    for (int i = 0; i < n_spectral_samples; i++) {
+        float w0 = (float)i / n_spectral_samples;
+        float w1 = (float)(i+1) / n_spectral_samples;
+        float lambda0 = (1.f - w0) * sampled_lambda_start + w0 * sampled_lambda_end;
+        float lambda1 = (1.f - w1) * sampled_lambda_start + w1 * sampled_lambda_end;
+        c[i] = averageSample(lambdas, values, lambda0, lambda1);
+        X[i] = averageSample(CIE_lambda, CIE_X, lambda0, lambda1);
+        Y[i] = averageSample(CIE_lambda, CIE_Y, lambda0, lambda1);
+        Z[i] = averageSample(CIE_lambda, CIE_Z, lambda0, lambda1);
+    }
+
+    for (int i = 0; i < n_spectral_samples; ++i) {
+        xyz[0] += X[i] * c[i];
+        xyz[1] += Y[i] * c[i];
+        xyz[2] += Z[i] * c[i];
+    }
+
+    float scale = float(CIE_lambda[n_cie_samples-1] - CIE_lambda[0]) /
+                    float(CIE_Y_integral * n_cie_samples);
+    xyz[0] *= scale;
+    xyz[1] *= scale;
+    xyz[2] *= scale;
+
+    rgb[0] = 3.240479f * xyz[0] - 1.537150f * xyz[1] - 0.498535f * xyz[2];
+    rgb[1] = -0.969256f * xyz[0] + 1.875991f * xyz[1] + 0.041556f * xyz[2];
+    rgb[2] = 0.055648f * xyz[0] - 0.204043f * xyz[1] + 1.057311f * xyz[2];
+
+    return glm::clamp(rgb, 0.f, 1.f);
+}
+
 }
