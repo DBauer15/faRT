@@ -1,6 +1,7 @@
 add_subdirectory(opengl)
 add_subdirectory(metal)
 
+find_package(TBB REQUIRED)
 
 add_executable(fart
     common/app.h
@@ -30,6 +31,7 @@ target_link_libraries(fart PUBLIC
     tinyobjloader
     pbrtParser
     glm::glm
+    TBB::tbb
     )
 
 if (BUILD_OPENGL_RENDERER)

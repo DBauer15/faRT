@@ -100,7 +100,7 @@ struct Scene {
         std::vector<OpenPBRMaterial> m_materials;
         std::vector<Image> m_textures;
 
-        float m_scene_scale;
+        float m_scene_scale { 1.f };
         std::filesystem::path m_base_path;
 };
 

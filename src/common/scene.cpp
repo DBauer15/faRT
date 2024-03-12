@@ -7,6 +7,8 @@
 #include <cstring>
 #include <stdexcept>
 #include <unordered_map>
+
+#include <tbb/tbb.h>
 #include <glm/ext.hpp>
 #include <glm/gtx/component_wise.hpp>
 
@@ -105,9 +107,9 @@ Scene::loadObj(std::string scene) {
     // Add a default material for faces that do not have a material id
     m_materials.push_back(OpenPBRMaterial::defaultMaterial());
 
-    Object obj;
     // Parse meshes
     for (const auto& shape : shapes) {
+        Object obj;
         const auto& mesh = shape.mesh;
 
         std::map<std::tuple<uint32_t, uint32_t, uint32_t>, uint32_t> index_map; 
@@ -161,8 +163,8 @@ Scene::loadObj(std::string scene) {
         }
         LOG("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ")");
         obj.geometries.push_back(g);
+        m_objects.push_back(obj);
     }
-    m_objects.push_back(obj);
 
     // OBJ does not support instancing, so each object has one instance
     for (uint32_t i = 0; i < m_objects.size(); i++) {
@@ -318,31 +320,48 @@ Scene::computeAllSmoothingNormals(tinyobj::attrib_t& attrib,
 
 void
 Scene::updateSceneScale() {
-    float min_vertex = 1e30f;
-    float max_vertex = -1e30f;
-    glm::vec3 current_min, current_max;
+    float min_coord = 1e30f;
+    float max_coord = -1e30f;
+    glm::vec3 min_vertex (1e30f);
+    glm::vec3 max_vertex (-1e30f);
 
-    for (auto& instance : m_instances) {
-        glm::mat4 instance_to_world = glm::inverse(instance.world_to_instance);
-        for (auto& geometry : m_objects[instance.object_id].geometries) {
-            current_min = std::min_element(geometry.vertices.begin(), geometry.vertices.end(),
-                            [](auto v0, auto v1) {
-                                return glm::compMin(v0.position) < glm::compMin(v1.position);
-                            })->position;
-            current_min = glm::vec3(instance_to_world * glm::vec4(current_min, 1.f));
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, m_instances.size()), [&](const tbb::blocked_range<size_t>& r) {
+            for (auto i = r.begin(); i != r.end(); i++) {
+                glm::mat4 instance_to_world = glm::inverse(m_instances[i].world_to_instance);
+                for (auto& geometry : m_objects[m_instances[i].object_id].geometries) {
 
-            current_max = std::max_element(geometry.vertices.begin(), geometry.vertices.end(),
-                            [](auto v0, auto v1) {
-                                return glm::compMax(v0.position) < glm::compMax(v1.position);
-                            })->position;
-            current_max = glm::vec3(instance_to_world * glm::vec4(current_max, 1.f));
+                    // TODO: Apply transformations to the minimum and maximum
+                    // Find min 
+                    min_vertex = tbb::parallel_reduce(tbb::blocked_range<int>(0, geometry.vertices.size()), min_vertex, [&](const tbb::blocked_range<int>& rr, glm::vec3 current_min) {
+                            glm::vec3 local_min = current_min;
+                            for (int j = rr.begin(); j != rr.end(); j++){
+                                auto& vertex = geometry.vertices[j];
+                                local_min = glm::compMin(vertex.position) < glm::compMin(local_min) ? vertex.position : local_min;
+                            }
+                            return local_min;
+                    },
+                    [](glm::vec3 a, glm::vec3 b) { return glm::compMin(a) < glm::compMin(b) ? a : b; });
+                    min_vertex = glm::vec3(instance_to_world * glm::vec4(min_vertex, 1.f));
 
-            min_vertex = std::min(min_vertex, glm::compMin(current_min));
-            max_vertex = std::max(max_vertex, glm::compMax(current_max));
-        }
-    }
 
-    m_scene_scale = max_vertex - min_vertex;
+                    // Find max
+                    max_vertex = tbb::parallel_reduce(tbb::blocked_range<int>(0, geometry.vertices.size()), max_vertex, [&](const tbb::blocked_range<int>& rr, glm::vec3 current_max) {
+                            glm::vec3 local_max = current_max;
+                            for (int j = rr.begin(); j != rr.end(); j++){
+                                auto& vertex = geometry.vertices[j];
+                                local_max = glm::compMax(vertex.position) > glm::compMax(local_max) ? vertex.position : local_max;
+                            }
+                            return local_max;
+                    },
+                    [](glm::vec3 a, glm::vec3 b) { return glm::compMax(a) > glm::compMax(b) ? a : b; });
+                    max_vertex = glm::vec3(instance_to_world * glm::vec4(max_vertex, 1.f));
+                }
+            }
+        });
+    min_coord = glm::compMin(min_vertex);
+    max_coord = glm::compMax(max_vertex);
+
+    m_scene_scale = max_coord - min_coord;
 }
 
 float
@@ -525,7 +544,12 @@ Scene::loadPBRTMaterial(std::shared_ptr<pbrt::Material> material, OpenPBRMateria
 
 bool 
 Scene::loadPBRTMaterialDisney(pbrt::DisneyMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
-    return false;
+    pbr_material.base_color = glm::make_vec3(&material.color.x);
+    pbr_material.base_metalness = material.metallic;
+    pbr_material.specular_ior = material.eta;
+    pbr_material.specular_roughness = material.roughness;
+    pbr_material.transmission_weight = material.specTrans;
+    return true;
 }
 
 bool 
