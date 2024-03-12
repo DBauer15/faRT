@@ -20,14 +20,18 @@ layout(std430, binding = 3) buffer accel1 {
     TLASNode tlas [];
 };
 
-layout(std430, binding = 4) buffer inst0 {
+layout(std430, binding = 4) buffer accel2 {
+    uint blas_offsets [];
+};
+
+layout(std430, binding = 5) buffer inst0 {
     Instance instances [];
 };
 
-layout(std430, binding = 5) buffer mat0 {
+layout(std430, binding = 6) buffer mat0 {
     OpenPBRMaterial materials [];
 };
 
-layout(std430, binding = 6) buffer tex0 {
+layout(std430, binding = 7) buffer tex0 {
     sampler2D textures [];
 };
