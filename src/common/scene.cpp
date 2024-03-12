@@ -21,7 +21,7 @@ namespace fart {
 
 Scene::Scene(std::string scene) {
     m_base_path = std::filesystem::absolute(std::filesystem::path(scene));
-    std::string extension = m_base_path.extension();
+    std::string extension = m_base_path.extension().string();
     m_base_path = m_base_path.parent_path();
 
     if (extension == ".obj") {
@@ -91,7 +91,7 @@ Scene::loadObj(std::string scene) {
                 pbr_mat.base_color_texid = texture_index_map.at(material.diffuse_texname);
             } else {
                 std::filesystem::path texture_filename = getAbsolutePath(material.diffuse_texname);
-                Image diffuse_texture(texture_filename);
+                Image diffuse_texture(texture_filename.string());
                 if (diffuse_texture.isValid()) { 
                     m_textures.push_back(std::move(diffuse_texture));
                     pbr_mat.base_color_texid = m_textures.size() - 1;
@@ -390,9 +390,9 @@ Scene::getAbsolutePath(std::filesystem::path p) {
         return result_no_backslash;
     }
     return result;
-#elif
+#else
     if (result.is_absolute()) {
-        return result
+        return result;
     }
     return m_base_path / result;
 #endif
@@ -742,7 +742,7 @@ Scene::loadPBRTTexture(std::shared_ptr<pbrt::Texture> texture, std::map<std::sha
 
     if (image_texture) {
         std::filesystem::path texture_filename = getAbsolutePath(image_texture->fileName);
-        Image img(texture_filename); 
+        Image img(texture_filename.string()); 
         m_textures.push_back(std::move(img));
         LOG("Read texture image '" + image_texture->fileName + "'");
         texture_index_map[texture] = m_textures.size() - 1;
