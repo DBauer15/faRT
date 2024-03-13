@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <filesystem>
 
 #include <glm/glm.hpp>
 
@@ -12,7 +13,7 @@ namespace fart {
 struct Image {
 
     public:
-        Image(std::string filename);
+        Image(std::filesystem::path filename, bool is_hdr = false);
         Image(glm::vec3 color);
         Image(Image& other) = delete;
         Image(Image&& other);
@@ -31,6 +32,7 @@ struct Image {
         void mix(glm::vec3 color, glm::vec3 amount);
         void mix(Image& other, glm::vec3 amount);
 
+        bool isHDR() { return m_is_hdr; }
         bool isValid() { return m_image != nullptr; }
 
     private:
@@ -39,6 +41,8 @@ struct Image {
         int32_t m_width;
         int32_t m_height;
         int32_t m_channels;
+
+        bool m_is_hdr { false };
 
 };
 

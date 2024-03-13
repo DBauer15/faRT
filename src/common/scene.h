@@ -8,6 +8,7 @@
 
 #include "mesh.h"
 #include "material.h"
+#include "light.h"
 #include "image.h"
 
 // foward declaration for method signatures in Scene
@@ -47,6 +48,7 @@ struct Scene {
         std::vector<Object>& getObjects() { return m_objects; }
         std::vector<ObjectInstance>& getInstances() { return m_instances; }
         std::vector<OpenPBRMaterial>& getMaterials() { return m_materials; }
+        std::vector<Light>& getLights() { return m_lights; }
         std::vector<Image>& getTextures() { return m_textures; }
 
         float getSceneScale() { return m_scene_scale; }
@@ -98,6 +100,7 @@ struct Scene {
         std::vector<Object> m_objects;
         std::vector<ObjectInstance> m_instances;
         std::vector<OpenPBRMaterial> m_materials;
+        std::vector<Light> m_lights;
         std::vector<Image> m_textures;
 
         float m_scene_scale { 1.f };

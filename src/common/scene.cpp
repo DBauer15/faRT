@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <cstring>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -173,6 +172,15 @@ Scene::loadObj(std::string scene) {
         instance.world_to_instance = glm::inverse(glm::mat4(1.f));
         m_instances.push_back(instance);
     }
+
+    // OBJ does not support lights, so we add a single infinite area light 
+    Image sky_texture("sky.exr", true);
+    m_textures.push_back(std::move(sky_texture));
+
+    Light light = Light::defaultLight();
+    light.type = INFINITE_LIGHT;
+    light.map_texid = m_textures.size() - 1;
+    m_lights.push_back(light);
 }
 
 /*
@@ -426,6 +434,15 @@ Scene::loadPBRT(std::string scene) {
         m_instances.push_back(root);
         WARN("No instance data found, adding default instance");
     }
+
+    // TODO: Import light sources from PBRT
+    Image sky_texture("sky.exr", true);
+    m_textures.push_back(std::move(sky_texture));
+
+    Light light = Light::defaultLight();
+    light.type = INFINITE_LIGHT;
+    light.map_texid = m_textures.size() - 1;
+    m_lights.push_back(light);
 }
 
 void
@@ -780,7 +797,7 @@ Scene::loadPBRTSpectrum(pbrt::Spectrum& spectrum) {
         if (lambda1 > lambdas[n - 1])
             sum += values[n - 1] * (lambda1 - lambdas[n - 1]);
 
-        int i = 0;
+        size_t i = 0;
         while (lambda0 > lambdas[i + 1]) ++i;
         if (i+1 >= n) return sum;
 

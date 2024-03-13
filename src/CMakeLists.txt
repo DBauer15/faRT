@@ -24,11 +24,13 @@ set_target_properties(fart PROPERTIES
 target_include_directories(fart PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
     ${STB_INCLUDE_DIR}
-    ${PBRT_PARSER_INCLUDE_DIR})
+    ${PBRT_PARSER_INCLUDE_DIR}
+    ${TINYEXR_INCLUDE_DIR})
 
 target_link_libraries(fart PUBLIC
     glfw
     tinyobjloader
+    tinyexr
     pbrtParser
     glm::glm
     TBB::tbb
@@ -41,6 +43,13 @@ elseif (BUILD_METAL_RENDERER)
     target_link_libraries(fart PUBLIC renderer_metal)
     target_compile_definitions(fart PUBLIC METAL_RENDERER)
 endif()
+
+add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/sky.exr
+    MAIN_DEPENCY ${CMAKE_CURRENT_LIST_DIR}/sky.exr
+    COMMAND ${CMAKE_COMMAND} -E copy 
+            ${CMAKE_CURRENT_LIST_DIR}/sky.exr
+            ${PROJECT_BINARY_DIR}/sky.exr)
 
 install(TARGETS fart
         RUNTIME DESTINATION bin)
