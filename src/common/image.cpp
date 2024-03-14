@@ -54,7 +54,7 @@ Image::Image(std::filesystem::path filename, bool is_hdr) : m_is_hdr(is_hdr) {
         if (is_hdr)
             image = (uint8_t*)stbi_loadf(filename.string().c_str(), &m_width, &m_height, &m_channels, 4);
         else
-            image = stbi_load(filename.c_str(), &m_width, &m_height, &m_channels, 4);
+            image = stbi_load(filename.string().c_str(), &m_width, &m_height, &m_channels, 4);
         m_channels = 4;
 
         if (image == nullptr) {
