@@ -44,12 +44,5 @@ elseif (BUILD_METAL_RENDERER)
     target_compile_definitions(fart PUBLIC METAL_RENDERER)
 endif()
 
-add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/sky.exr
-    MAIN_DEPENCY ${CMAKE_CURRENT_LIST_DIR}/sky.exr
-    COMMAND ${CMAKE_COMMAND} -E copy 
-            ${CMAKE_CURRENT_LIST_DIR}/sky.exr
-            ${PROJECT_BINARY_DIR}/sky.exr)
-
 install(TARGETS fart
         RUNTIME DESTINATION bin)
