@@ -82,7 +82,7 @@ Scene::loadObj(std::string scene) {
         pbr_mat.specular_color = glm::make_vec3(material.specular);
         pbr_mat.specular_weight = luminance(pbr_mat.specular_color);
         pbr_mat.specular_ior = material.ior;
-        pbr_mat.specular_roughness = std::clamp((1.f - std::log10(material.shininess + 1) / 3.f), 0.0001f, 1.f); // TODO: This is not a good approximation of roughness as the Phong shininess is exponential
+        pbr_mat.specular_roughness = std::clamp((1.f - std::log10(material.shininess + 1) / 3.f), 1e-5f, 1.f); // TODO: This is not a good approximation of roughness as the Phong shininess is exponential
         pbr_mat.transmission_weight = 1.f - material.dissolve;
         
         if (!material.diffuse_texname.empty()) {
@@ -593,7 +593,7 @@ Scene::loadPBRTMaterialMetal(pbrt::MetalMaterial& material, OpenPBRMaterial& pbr
     }
 
     if (material.remapRoughness) {
-        float roughness = std::max(material.roughness, 1e-3f);
+        float roughness = std::max(material.roughness, 1e-5f);
         float x = std::log(roughness);
         pbr_material.specular_roughness = 1.62142f + 0.819955f * x + 0.1734f * x * x +
                0.0171201f * x * x * x + 0.000640711f * x * x * x * x;
@@ -637,7 +637,7 @@ Scene::loadPBRTMaterialSubstrate(pbrt::SubstrateMaterial& material, OpenPBRMater
     // TODO: Anisotropic roughness is currently not supported. Average both values and use that for now.
     float roughness = (material.uRoughness + material.vRoughness) / 2.f;
     if (material.remapRoughness) {
-        roughness = std::max(roughness, 1e-3f);
+        roughness = std::max(roughness, 1e-5f);
         float x = std::log(roughness);
         pbr_material.specular_roughness = 1.62142f + 0.819955f * x + 0.1734f * x * x +
                0.0171201f * x * x * x + 0.000640711f * x * x * x * x;
@@ -654,7 +654,10 @@ Scene::loadPBRTMaterialSubstrate(pbrt::SubstrateMaterial& material, OpenPBRMater
 
 bool 
 Scene::loadPBRTMaterialMirror(pbrt::MirrorMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
-    return false;
+    pbr_material.base_metalness = 1.f;
+    pbr_material.specular_color = glm::make_vec3(&material.kr.x);
+    pbr_material.specular_roughness = 1e-5f;
+    return true;
 }
 
 bool 
@@ -673,7 +676,7 @@ bool
 Scene::loadPBRTMaterialGlass(pbrt::GlassMaterial& material, OpenPBRMaterial& pbr_material, std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     //TODO: See metal material. Unclear if mapping `kr` like this makes sense
     pbr_material.specular_color = glm::make_vec3(&material.kr.x);
-    pbr_material.specular_roughness = 1e-3f;
+    pbr_material.specular_roughness = 1e-5f;
     pbr_material.specular_ior = material.index;
     pbr_material.transmission_weight = 1.f;
     return true;
