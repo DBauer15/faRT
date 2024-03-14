@@ -7,11 +7,13 @@ namespace fart {
 
 App::App(std::string scene) {
     m_renderer = std::make_unique<DeviceRenderer>();
-    m_scene = std::make_unique<Scene>(scene);
-    m_camera = std::make_unique<FirstPersonCamera>(
+    m_scene = std::make_shared<Scene>(scene);
+    m_camera = std::make_shared<FirstPersonCamera>(
             glm::vec3( 0.f, 0.f, -m_scene->getSceneScale() ), 
             glm::vec3( 0.f, 0.f, 0.f ), 
             glm::vec3( 0.f, 1.f, 0.f ));
+    if (m_scene->getCamera()) 
+        m_camera = m_scene->getCamera();
     m_window = std::make_shared<Window>(WIDTH, HEIGHT, "FaRT - " + scene + " @ " + m_renderer->name());
 
     m_renderer->init(m_scene, m_window);
@@ -38,11 +40,15 @@ App::run() {
             m_camera->move(keyboardInputToMovementVector() * m_scene->getSceneScale());
 
             // camera mode
-            if (m_window->isKeyPressed(GLFW_KEY_C)) {
+            if (!m_camera_mode_changed && m_window->isKeyPressed(GLFW_KEY_C)) {
+                m_camera_mode_changed = true;
                 if (typeid(*m_camera) == typeid(ArcballCamera))
                     m_camera = std::make_unique<FirstPersonCamera>(*m_camera);
                 else
                     m_camera = std::make_unique<ArcballCamera>(*m_camera);
+            }
+            if (!m_window->isKeyPressed(GLFW_KEY_C)) {
+                m_camera_mode_changed = false;
             }
         }
 

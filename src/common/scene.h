@@ -6,6 +6,7 @@
 #include <memory>
 #include <filesystem>
 
+#include "camera.h"
 #include "mesh.h"
 #include "material.h"
 #include "light.h"
@@ -45,6 +46,7 @@ struct Scene {
         Scene(const Scene &) = delete;
         Scene &operator=(const Scene &) = delete;
         
+        std::shared_ptr<Camera> getCamera() { return m_camera; }
         std::vector<Object>& getObjects() { return m_objects; }
         std::vector<ObjectInstance>& getInstances() { return m_instances; }
         std::vector<OpenPBRMaterial>& getMaterials() { return m_materials; }
@@ -97,6 +99,7 @@ struct Scene {
         std::filesystem::path getAbsolutePath(std::filesystem::path p);
 
         /* Scene Data */
+        std::shared_ptr<Camera> m_camera;
         std::vector<Object> m_objects;
         std::vector<ObjectInstance> m_instances;
         std::vector<OpenPBRMaterial> m_materials;

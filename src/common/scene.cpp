@@ -443,6 +443,16 @@ Scene::loadPBRT(std::string scene) {
     light.type = INFINITE_LIGHT;
     light.map_texid = m_textures.size() - 1;
     m_lights.push_back(light);
+
+    // Import camera
+    if (pbrt_scene->cameras.size() > 0) {
+        auto& camera = pbrt_scene->cameras[0]; // parse the first available camera
+        m_camera = std::make_shared<FirstPersonCamera>(
+                    glm::make_vec3(&(camera->simplified.lens_center.x)),
+                    glm::make_vec3(&(camera->simplified.screen_center.x)),
+                    glm::make_vec3(&(camera->frame.l.vy.x))
+                );
+    }
 }
 
 void
