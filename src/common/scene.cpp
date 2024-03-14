@@ -435,14 +435,15 @@ Scene::loadPBRT(std::string scene) {
         WARN("No instance data found, adding default instance");
     }
 
-    // TODO: Import light sources from PBRT
-    Image sky_texture("sky.exr", true);
-    m_textures.push_back(std::move(sky_texture));
+    if (m_lights.size() == 0) {
+        Image sky_texture("sky.exr", true);
+        m_textures.push_back(std::move(sky_texture));
 
-    Light light = Light::defaultLight();
-    light.type = INFINITE_LIGHT;
-    light.map_texid = m_textures.size() - 1;
-    m_lights.push_back(light);
+        Light light = Light::defaultLight();
+        light.type = INFINITE_LIGHT;
+        light.map_texid = m_textures.size() - 1;
+        m_lights.push_back(light);
+    }
 
     // Import camera
     if (pbrt_scene->cameras.size() > 0) {
@@ -462,6 +463,7 @@ Scene::loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current,
                                 std::map<std::shared_ptr<pbrt::Texture>, uint32_t>& texture_index_map) {
     if (!current || object_map.find(current) != object_map.end()) return;
 
+    // Load shapes
     Object obj;
     for (auto& shape : current->shapes) {
         // Non-triangle shapes are not supported
@@ -510,6 +512,80 @@ Scene::loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current,
         }
         obj.geometries.push_back(g);
         LOG("Read geometry (v: " + std::to_string(g.vertices.size()) + ", i: " + std::to_string(g.indices.size()) + ")");
+    }
+
+    // Load light sources
+    for (auto& light_source : current->lightSources) {
+        std::shared_ptr<pbrt::InfiniteLightSource> infinite_light = std::dynamic_pointer_cast<pbrt::InfiniteLightSource>(light_source);
+        std::shared_ptr<pbrt::DistantLightSource> distant_light = std::dynamic_pointer_cast<pbrt::DistantLightSource>(light_source);
+        std::shared_ptr<pbrt::PointLightSource> point_light = std::dynamic_pointer_cast<pbrt::PointLightSource>(light_source);
+
+        Light light = Light::defaultLight();
+        if (infinite_light) {
+            light.L = glm::make_vec3(&infinite_light->L.x);
+            light.type = INFINITE_LIGHT;
+
+            if (!infinite_light->mapName.empty()) {
+                std::filesystem::path filename = getAbsolutePath(infinite_light->mapName);
+                Image infinite_light_map(filename, true);
+                m_textures.push_back(std::move(infinite_light_map));
+
+                light.map_texid = m_textures.size() - 1;
+            }
+            LOG("Parsed infinite light source");
+        }
+
+        if (distant_light) {
+            light.L = glm::make_vec3(&distant_light->L.x);
+            light.type = DISTANT_LIGHT;
+            light.from = glm::make_vec3(&distant_light->from.x);
+            light.to = glm::make_vec3(&distant_light->to.x);
+            LOG("Parsed distant light source");
+        }
+
+        if (point_light) {
+            light.L = glm::make_vec3(&point_light->I.x);
+            light.type = POINT_LIGHT;
+            light.from = glm::make_vec3(&point_light->from.x);
+            LOG("Parsed point light source");
+        }
+
+        if (infinite_light || distant_light || point_light) 
+            m_lights.push_back(light);
+    }
+
+    // Load area lights, which are shapes and not lights in PBRT
+    for (auto& shape : current->shapes) {
+        auto sphere_shape = std::dynamic_pointer_cast<pbrt::Sphere>(shape);
+        auto disk_shape = std::dynamic_pointer_cast<pbrt::Disk>(shape);
+        std::shared_ptr<pbrt::DiffuseAreaLightRGB> area_light_rgb;
+        std::shared_ptr<pbrt::DiffuseAreaLightBB> area_light_bb;
+        if (sphere_shape && sphere_shape->areaLight) {
+            area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(sphere_shape->areaLight);
+            area_light_bb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightBB>(sphere_shape->areaLight);
+        }
+
+        if (disk_shape && disk_shape->areaLight) {
+            area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(disk_shape->areaLight);
+            area_light_bb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightBB>(disk_shape->areaLight);
+        }
+
+        if (area_light_rgb || area_light_bb) {
+            Light light = Light::defaultLight();
+            light.type = sphere_shape ? SPHERE_LIGHT : DISK_LIGHT;
+            LOG((sphere_shape ? "Parsed sphere area light source" : "Parsed disk area light source"));
+
+            if (area_light_rgb) {
+                light.L = glm::make_vec3(&area_light_rgb->L.x);
+            }
+
+            if (area_light_bb) {
+                pbrt::vec3f L = area_light_bb->LinRGB();
+                light.L = glm::make_vec3(&L.x);
+            }
+
+            m_lights.push_back(light);
+        }
     }
 
     if (obj.geometries.size() > 0) {
