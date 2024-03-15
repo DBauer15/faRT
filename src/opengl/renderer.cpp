@@ -31,6 +31,7 @@ OpenGlRenderer::initAccelerationStructures() {
         bvhs.push_back(bvh);
     }
 
+
     // Store BVH information locally
     size_t bvhnodes_size = std::accumulate(bvhs.begin(), bvhs.end(), 0, [](size_t acc, BVH& bvh) { return acc + bvh.getNodesUsed(); });
     size_t vertices_size = std::accumulate(bvhs.begin(), bvhs.end(), 0, [](size_t acc, BVH& bvh) { return acc + bvh.getVertices().size(); });
@@ -63,7 +64,7 @@ OpenGlRenderer::initAccelerationStructures() {
         index_offset += bvh.getVertices().size();
         index_id_offset += bvh.getIndices().size();
     }
-    
+
     // Build TLAS
     m_tlas = std::make_unique<TLAS>(m_scene->getInstances(), bvhs);
 }
@@ -93,15 +94,17 @@ OpenGlRenderer::initBuffers() {
     m_indices = std::make_unique<StorageBuffer>(1);
     m_blas_buffer = std::make_unique<StorageBuffer>(2);
     m_tlas_buffer = std::make_unique<StorageBuffer>(3);
-    m_instance_buffer = std::make_unique<StorageBuffer>(4);
-    m_materials = std::make_unique<StorageBuffer>(5);
-    m_textures_buffer = std::make_unique<StorageBuffer>(6);
+    m_blas_offset_buffer = std::make_unique<StorageBuffer>(4);
+    m_instance_buffer = std::make_unique<StorageBuffer>(5);
+    m_materials = std::make_unique<StorageBuffer>(6);
+    m_textures_buffer = std::make_unique<StorageBuffer>(7);
 
     m_vertices->setData(m_vertices_contiguous);
     m_indices->setData(m_indices_contiguous);
     m_blas_buffer->setData(m_blas_list);
     m_tlas_buffer->setData(m_tlas->getNodes().data(), m_tlas->getNodesUsed());
-    m_instance_buffer->setData(m_scene->getInstances());
+    m_blas_offset_buffer->setData(m_tlas->getBLASOffsets());
+    m_instance_buffer->setData(m_tlas->getInstances());
     m_materials->setData(m_scene->getMaterials());
 
     std::vector<GLuint64> texture_handles;
@@ -165,6 +168,7 @@ OpenGlRenderer::initBindings() {
     m_indices->bind();
     m_blas_buffer->bind();
     m_tlas_buffer->bind();
+    m_blas_offset_buffer->bind();
     m_instance_buffer->bind();
     m_textures_buffer->bind();
     m_vertex_array_pathtracer->addVertexAttribute(/*shader=*/*m_shader_pathtracer.get(), 
@@ -178,6 +182,7 @@ OpenGlRenderer::initBindings() {
     m_indices->unbind();
     m_blas_buffer->unbind();
     m_tlas_buffer->unbind();
+    m_blas_buffer->unbind();
     m_instance_buffer->unbind();
     m_textures_buffer->unbind();
 

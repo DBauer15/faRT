@@ -35,6 +35,7 @@ struct OpenGlRenderer : Renderer {
 
         std::unique_ptr<StorageBuffer> m_blas_buffer;
         std::unique_ptr<StorageBuffer> m_tlas_buffer;
+        std::unique_ptr<StorageBuffer> m_blas_offset_buffer;
         std::unique_ptr<StorageBuffer> m_vertices;
         std::unique_ptr<StorageBuffer> m_indices;
         std::unique_ptr<StorageBuffer> m_instance_buffer;

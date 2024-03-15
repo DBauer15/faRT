@@ -110,33 +110,35 @@ SurfaceInteraction intersect(Ray ray) {
 
     do {
         TLASNode node = tlas[stack[current--]];
-        if (node.left == 0 && node.right == 0) {
-            Ray ray_backup = ray;
-            mat4 xfm = instances[node.instance].world_to_instance;
-            ray.o = vec3(xfm * vec4(ray.o, 1));
-            ray.d = vec3(xfm * vec4(ray.d, 0));
-            ray.rD = 1.f / ray.d;
+        if (node.left_child <= 0) {
+            for (int i = 0; i < node.instance_count; i++) {
+                uint instance = node.first_instance_id + i;
+                Ray ray_backup = ray;
+                mat4 xfm = instances[instance].world_to_instance;
+                ray.o = vec3(xfm * vec4(ray.o, 1));
+                ray.d = vec3(xfm * vec4(ray.d, 0));
+                ray.rD = 1.f / ray.d;
 
-            intersectBLAS(ray, si, node.blas);
-            if (ray.t < ray_backup.t) {
-                si.w_o = -ray_backup.d;
+                intersectBLAS(ray, si, blas_offsets[instances[instance].object_id]);
+                if (ray.t < ray_backup.t) {
+                    si.w_o = -ray_backup.d;
 
-                // transform object-space normal to world
-                si.n = normalize((inverse(xfm) * vec4(si.n, 0.f)).xyz);
+                    // transform object-space normal to world
+                    si.n = normalize((inverse(xfm) * vec4(si.n, 0.f)).xyz);
+                }
+                ray_backup.t = ray.t;
+                ray = ray_backup;
             }
-            ray_backup.t = ray.t;
-            ray = ray_backup;
-
         } else {
-            float left_dist = intersectAABB(ray, tlas[node.left].aabb_min.xyz, tlas[node.left].aabb_max.xyz);
-            float right_dist = intersectAABB(ray, tlas[node.right].aabb_min.xyz, tlas[node.right].aabb_max.xyz);
+            float left_dist = intersectAABB(ray, tlas[node.left_child].aabb_min.xyz, tlas[node.left_child].aabb_max.xyz);
+            float right_dist = intersectAABB(ray, tlas[node.left_child+1].aabb_min.xyz, tlas[node.left_child+1].aabb_max.xyz);
 
             if (left_dist > right_dist) {
-                if (left_dist < 1e30f) stack[++current] = node.left;
-                if (right_dist < 1e30f) stack[++current] = node.right;
+                if (left_dist < 1e30f) stack[++current] = node.left_child;
+                if (right_dist < 1e30f) stack[++current] = node.left_child+1;
             } else {
-                if (right_dist < 1e30f) stack[++current] = node.right;
-                if (left_dist < 1e30f) stack[++current] = node.left;
+                if (right_dist < 1e30f) stack[++current] = node.left_child+1;
+                if (left_dist < 1e30f) stack[++current] = node.left_child;
             }
         }
     } while (current >= 0 && current < 32);

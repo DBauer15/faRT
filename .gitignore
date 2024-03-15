@@ -65,3 +65,6 @@ build/
 
 # Allow resource files
 !resources/*
+
+# VSCode
+.vscode

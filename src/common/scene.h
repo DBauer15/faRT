@@ -6,8 +6,10 @@
 #include <memory>
 #include <filesystem>
 
+#include "camera.h"
 #include "mesh.h"
 #include "material.h"
+#include "light.h"
 #include "image.h"
 
 // foward declaration for method signatures in Scene
@@ -44,9 +46,11 @@ struct Scene {
         Scene(const Scene &) = delete;
         Scene &operator=(const Scene &) = delete;
         
+        std::shared_ptr<Camera> getCamera() { return m_camera; }
         std::vector<Object>& getObjects() { return m_objects; }
         std::vector<ObjectInstance>& getInstances() { return m_instances; }
         std::vector<OpenPBRMaterial>& getMaterials() { return m_materials; }
+        std::vector<Light>& getLights() { return m_lights; }
         std::vector<Image>& getTextures() { return m_textures; }
 
         float getSceneScale() { return m_scene_scale; }
@@ -95,12 +99,14 @@ struct Scene {
         std::filesystem::path getAbsolutePath(std::filesystem::path p);
 
         /* Scene Data */
+        std::shared_ptr<Camera> m_camera;
         std::vector<Object> m_objects;
         std::vector<ObjectInstance> m_instances;
         std::vector<OpenPBRMaterial> m_materials;
+        std::vector<Light> m_lights;
         std::vector<Image> m_textures;
 
-        float m_scene_scale;
+        float m_scene_scale { 1.f };
         std::filesystem::path m_base_path;
 };
 

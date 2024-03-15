@@ -26,13 +26,29 @@ THE SOFTWARE.
 #include <iostream>
 #include <glm/ext.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtx/component_wise.hpp>
+
+#include "defs.h"
 
 namespace fart {
+
 
 // Project the point in [-1, 1] screen space onto the arcball sphere
 static glm::quat screen_to_arcball(const glm::vec2 &p);
 
-ArcballCamera::ArcballCamera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up)
+Camera::Camera(const glm::vec3 up) {
+    float max_up = glm::compMax(up);
+    m_world_up.x = (up.x == max_up ? 1.f : 0.f);
+    m_world_up.y = (up.y == max_up ? 1.f : 0.f);
+    m_world_up.z = (up.z == max_up ? 1.f : 0.f);
+
+    m_world_right = glm::vec3(1, 0, 0);
+    if (glm::cross(m_world_up, m_world_right) == glm::vec3(0.f))
+        m_world_right = glm::vec3(0, 1, 0);
+}
+
+
+ArcballCamera::ArcballCamera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up) : Camera(up)
 {
     const glm::vec3 dir = center - eye;
     glm::vec3 z_axis = glm::normalize(dir);
@@ -102,7 +118,8 @@ glm::quat screen_to_arcball(const glm::vec2 &p)
     }
 }
 
-FirstPersonCamera::FirstPersonCamera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up) {
+FirstPersonCamera::FirstPersonCamera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up) : Camera(up)
+{
     const glm::vec3 dir = center - eye;
     glm::vec3 z_axis = glm::normalize(dir);
     glm::vec3 x_axis = glm::normalize(glm::cross(z_axis, glm::normalize(up)));
@@ -115,13 +132,12 @@ FirstPersonCamera::FirstPersonCamera(const glm::vec3 eye, const glm::vec3 center
     updateCamera();
 }
 
-
 void 
 FirstPersonCamera::rotate(glm::vec2 prev_mouse, glm::vec2 cur_mouse) {
     glm::vec2 delta { cur_mouse.x - prev_mouse.x, prev_mouse.y - cur_mouse.y };
     delta *= 5.f;
-    glm::quat yaw = glm::angleAxis(delta.x, glm::vec3{ 0, 1, 0 });
-    glm::quat pitch = glm::angleAxis(delta.y, glm::vec3{ 1, 0, 0 });
+    glm::quat yaw = glm::angleAxis(delta.x, world_up());
+    glm::quat pitch = glm::angleAxis(delta.y, world_right());
 
     rotation = pitch * rotation * yaw;
     updateCamera();

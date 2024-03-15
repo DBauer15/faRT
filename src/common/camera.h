@@ -31,7 +31,7 @@ namespace fart {
 
 struct Camera {
     public:
-        Camera() = default;
+        Camera(const glm::vec3 up);
         virtual ~Camera() = default;
 
         virtual void rotate(glm::vec2 prev_mouse, glm::vec2 cur_mouse) = 0;
@@ -55,11 +55,18 @@ struct Camera {
         virtual glm::vec3 up() const {
             return glm::normalize(glm::vec3(inv_camera * glm::vec4{ 0,1,0,0 }));
         }
+        virtual glm::vec3 world_up() const {
+            return m_world_up;
+        }
+        virtual glm::vec3 world_right() const {
+            return m_world_right;
+        }
         virtual glm::vec3 center() const {
             return eye() + dir();
         }
     
     protected:
+        glm::vec3 m_world_up, m_world_right;
         virtual void updateCamera() = 0;
         glm::mat4 camera, inv_camera;
 };
@@ -77,7 +84,7 @@ struct ArcballCamera : public Camera {
         * screen: [win_width, win_height]
         */
         ArcballCamera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up);
-        ArcballCamera(const Camera& other) : ArcballCamera(other.eye(), other.center(), other.up()) {}
+        ArcballCamera(const Camera& other) : ArcballCamera(other.eye(), other.center(), other.world_up()) {}
         virtual ~ArcballCamera() = default;
 
         /* Rotate the camera from the previous mouse position to the current
@@ -113,7 +120,7 @@ struct FirstPersonCamera : public Camera {
 
     public:
         FirstPersonCamera(const glm::vec3 eye, const glm::vec3 center, const glm::vec3 up);
-        FirstPersonCamera(const Camera& other) : FirstPersonCamera(other.eye(), other.center(), other.up()) {}
+        FirstPersonCamera(const Camera& other) : FirstPersonCamera(other.eye(), other.center(), other.world_up()) {}
         virtual ~FirstPersonCamera() = default;
 
         virtual void rotate(glm::vec2 prev_mouse, glm::vec2 cur_mouse) override;

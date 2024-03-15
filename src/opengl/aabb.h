@@ -22,6 +22,10 @@ struct AABB {
         if (d.x < 0.f || d.y < 0.f || d.z < 0.f) return 0.f;
         return 2 * (d.x * d.y + d.x * d.z + d.y * d.z);
     }
+
+    glm::vec3 centroid() const {
+        return (min + max) / 2.f;
+    }
 };
 
 }

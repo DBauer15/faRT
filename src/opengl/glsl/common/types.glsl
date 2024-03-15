@@ -61,10 +61,9 @@ struct BVHNode {
 struct TLASNode {
     vec4 aabb_min;
     vec4 aabb_max;
-    uint blas;
-    uint instance;
-    uint left;
-    uint right;
+    uint left_child;
+    uint first_instance_id, instance_count;
+    uint filler;
 };
 
 struct Instance {
