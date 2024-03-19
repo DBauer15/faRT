@@ -573,7 +573,9 @@ Scene::loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current,
         if (area_light_rgb || area_light_bb) {
             Light light = Light::defaultLight();
             light.type = sphere_shape ? SPHERE_LIGHT : DISK_LIGHT;
-            LOG((sphere_shape ? "Parsed sphere area light source" : "Parsed disk area light source"));
+            light.radius = sphere_shape ? sphere_shape->radius : disk_shape->radius;
+            pbrt::vec3f from = sphere_shape ? sphere_shape->transform.p : disk_shape->transform.p;
+            light.from = glm::make_vec3(&from.x);
 
             if (area_light_rgb) {
                 light.L = glm::make_vec3(&area_light_rgb->L.x);
@@ -585,6 +587,7 @@ Scene::loadPBRTObjectsRecursive(std::shared_ptr<pbrt::Object> current,
             }
 
             m_lights.push_back(light);
+            LOG((sphere_shape ? "Parsed sphere area light source" : "Parsed disk area light source"));
         }
     }
 
