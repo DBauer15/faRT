@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include <cmath>
 #include <iostream>
 #include <glm/ext.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/component_wise.hpp>
 

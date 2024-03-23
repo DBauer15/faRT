@@ -1,5 +1,4 @@
 #include "app.h"
-#include "scene.h"
 #include <memory>
 #include <string>
 
@@ -12,8 +11,8 @@ App::App(std::string scene) {
             glm::vec3( 0.f, 0.f, -m_scene->getSceneScale() ), 
             glm::vec3( 0.f, 0.f, 0.f ), 
             glm::vec3( 0.f, 1.f, 0.f ));
-    if (m_scene->getCamera()) 
-        m_camera = m_scene->getCamera();
+    if (m_scene->getCamera())  
+        m_camera = std::make_shared<FirstPersonCamera>(m_scene->getCamera()->position, m_scene->getCamera()->lookat, m_scene->getCamera()->up);
     m_window = std::make_shared<Window>(WIDTH, HEIGHT, "FaRT - " + scene + " @ " + m_renderer->name());
 
     m_renderer->init(m_scene, m_window);

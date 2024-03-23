@@ -19,11 +19,12 @@ CXX_STANDARD_REQUIRED ON)
 
 target_include_directories(renderer_metal PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>/..
-    ${METAL_CPP_INCLUDE_DIR})
+    ${METAL_CPP_INCLUDE_DIR}
+    ${STAGE_INCLUDE_DIR})
 
 target_link_libraries(renderer_metal PUBLIC
-    glm::glm
     glfw
+    stage
     )
 
 target_link_libraries(renderer_metal PRIVATE "-framework Metal" "-framework QuartzCore" "-framework Foundation")

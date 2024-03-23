@@ -13,8 +13,10 @@ using DeviceRenderer = fart::MetalRenderer;
 #include "renderer.h"
 #include "defs.h"
 #include "window.h"
-#include "scene.h"
+#include <stage.h>
 #include <memory>
+
+using namespace stage;
 
 namespace fart {
 

@@ -5,10 +5,12 @@
 
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
+#include <stage.h>
 
 #include "defs.h"
-#include "scene.h"
 #include "window.h"
+
+using namespace stage;
 
 namespace fart {
 

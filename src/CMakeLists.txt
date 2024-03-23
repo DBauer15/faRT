@@ -1,18 +1,11 @@
 add_subdirectory(opengl)
 add_subdirectory(metal)
 
-find_package(TBB REQUIRED)
-
 add_executable(fart
     common/app.h
     common/app.cpp
     common/camera.h
     common/camera.cpp
-    common/image.h
-    common/image.cpp
-    common/mesh.h
-    common/scene.h
-    common/scene.cpp
     common/window.h
     common/window.cpp
     main.cpp)
@@ -23,17 +16,11 @@ set_target_properties(fart PROPERTIES
 
 target_include_directories(fart PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
-    ${STB_INCLUDE_DIR}
-    ${PBRT_PARSER_INCLUDE_DIR}
-    ${TINYEXR_INCLUDE_DIR})
+    ${STAGE_INCLUDE_DIR})
 
 target_link_libraries(fart PUBLIC
     glfw
-    tinyobjloader
-    tinyexr
-    pbrtParser
-    glm::glm
-    TBB::tbb
+    stage
     )
 
 if (BUILD_OPENGL_RENDERER)

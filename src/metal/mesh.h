@@ -3,7 +3,9 @@
 #include <vector>
 #include <Metal/Metal.hpp>
 
-#include "common/mesh.h"
+#include <stage.h>
+
+using namespace stage;
 
 namespace fart {
 
