@@ -7,6 +7,8 @@ namespace fart {
 App::App(std::string scene) {
     m_renderer = std::make_unique<DeviceRenderer>();
     m_scene = std::make_shared<Scene>(scene);
+    if (!m_scene->isValid()) return;
+
     m_camera = std::make_shared<FirstPersonCamera>(
             glm::vec3( 0.f, 0.f, -m_scene->getSceneScale() ), 
             glm::vec3( 0.f, 0.f, 0.f ), 
@@ -22,6 +24,7 @@ App::App(std::string scene) {
 
 void
 App::run() {
+    if (!m_scene->isValid()) return;
 
     while(!m_window->shouldClose()) {
         // update window
