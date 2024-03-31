@@ -24,6 +24,7 @@ target_include_directories(renderer_metal PUBLIC
 
 target_link_libraries(renderer_metal PUBLIC
     glfw
+    glm::glm
     stage
     )
 

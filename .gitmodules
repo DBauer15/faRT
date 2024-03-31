@@ -7,3 +7,6 @@
 [submodule "dependencies/stage"]
 	path = dependencies/stage
 	url = git@github.com:DBauer15/stage.git
+[submodule "dependencies/glm"]
+	path = dependencies/glm
+	url = git@github.com:g-truc/glm.git

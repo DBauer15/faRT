@@ -244,7 +244,8 @@ MetalRenderer::initAccelerationStructure() {
         instance_descriptors[i].mask = 0x01;
         instance_descriptors[i].intersectionFunctionTableOffset = 0;
 
-        glm::mat4 instance_to_world = glm::inverse(instance.world_to_instance);
+        glm::mat4 world_to_instance = glm::make_mat4(instance.world_to_instance.v);
+        glm::mat4 instance_to_world = glm::inverse(world_to_instance);
         for (int column = 0; column < 4; column++)
             for (int row = 0; row < 3; row++)
                 instance_descriptors[i].transformationMatrix.columns[column][row] = instance_to_world[column][row];

@@ -5,6 +5,9 @@ endif()
 # GLFW
 add_subdirectory(glfw)
 
+# GLM
+add_subdirectory(glm)
+
 # Metal C++ Headers
 set(METAL_CPP_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/metal-cpp CACHE INTERNAL "")
 
