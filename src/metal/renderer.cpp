@@ -97,10 +97,11 @@ MetalRenderer::initBuffers() {
     m_textures = m_device->newBuffer(m_scene->getTextures().size() * sizeof(uint64_t), MTL::StorageModeManaged);
     size_t texture_count = 0;
     for (auto& texture : m_scene->getTextures()) {
+        auto format = texture.isHDR() ? MTL::PixelFormatRGBA32Float : MTL::PixelFormatRGBA8Unorm_sRGB;
         Texture metal_texture(m_device, 
                               texture.getWidth(),
                               texture.getHeight(),
-                              MTL::PixelFormatRGBA8Unorm_sRGB,
+                              format,
                               MTL::StorageModeManaged,
                               MTL::TextureUsageShaderRead);
         metal_texture.setData(texture.getData());
