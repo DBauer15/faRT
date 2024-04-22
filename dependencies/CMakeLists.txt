@@ -1,5 +1,9 @@
-if(BUILD_OPENGL_RENDERER)
+if(BUILD_OPENGL_RENDERER OR BUILD_OPTIX_RENDERER)
     add_subdirectory(glad)
+endif()
+
+if (BUILD_OPTIX_RENDERER)
+    add_subdirectory(optix)
 endif()
 
 # GLFW

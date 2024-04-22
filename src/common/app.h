@@ -1,14 +1,5 @@
 #pragma once
 
-// Renderer Selection
-#if OPENGL_RENDERER
-#include "opengl/renderer.h"
-using DeviceRenderer = fart::OpenGlRenderer;
-#elif METAL_RENDERER
-#include "metal/renderer.h"
-using DeviceRenderer = fart::MetalRenderer;
-#endif
-
 #include "camera.h"
 #include "renderer.h"
 #include "defs.h"

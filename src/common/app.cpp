@@ -1,6 +1,18 @@
 #include "app.h"
 #include <memory>
 #include <string>
+// Renderer Selection
+#if OPENGL_RENDERER
+#define STAGE_API_USAGE_OPENGL 1
+#include "opengl/renderer.h"
+using DeviceRenderer = fart::OpenGlRenderer;
+#elif METAL_RENDERER
+#include "metal/renderer.h"
+using DeviceRenderer = fart::MetalRenderer;
+#elif OPTIX_RENDERER
+#include "optix/renderer.h"
+using DeviceRenderer = fart::OptiXRenderer;
+#endif
 
 namespace fart {
 
