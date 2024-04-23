@@ -4,13 +4,14 @@
 namespace fart {
 
 MetalGeometry::MetalGeometry(MTL::Device* device, const Geometry& geometry) {
-    m_vertices = device->newBuffer(geometry.vertices.data(), 
-                                   geometry.vertices.size() * sizeof(AligendVertex),
+    m_vertices = device->newBuffer(geometry.positions.data(), 
+                                   geometry.positions.size() * geometry.positions.stride(),
                                    MTL::ResourceStorageModeShared);
     m_indices = device->newBuffer(geometry.indices.data(),
                                   geometry.indices.size() * sizeof(uint32_t),
                                   MTL::ResourceStorageModeShared);
     m_num_indices = geometry.indices.size();
+    m_vertices_stride = geometry.positions.stride();
 }
 
 MTL::AccelerationStructureGeometryDescriptor*
@@ -21,12 +22,8 @@ MetalGeometry::getDescriptor() {
     descriptor->setIndexType(MTL::IndexTypeUInt32);
 
     descriptor->setVertexBuffer(m_vertices);
-    descriptor->setVertexStride(sizeof(AligendVertex));
+    descriptor->setVertexStride(m_vertices_stride);
     descriptor->setTriangleCount(m_num_indices / 3);
-
-    // descriptor->setPrimitiveDataBuffer(m_vertices);
-    // descriptor->setPrimitiveDataStride(3 * sizeof(AligendVertex));
-    // descriptor->setPrimitiveDataElementSize(3 * sizeof(AligendVertex));
 
     return descriptor;
 }

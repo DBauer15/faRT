@@ -21,8 +21,8 @@ struct MetalGeometry {
     private:
         uint32_t m_num_indices;
         MTL::Buffer* m_vertices;
+        uint32_t m_vertices_stride;
         MTL::Buffer* m_indices;
-
 
 };
 
