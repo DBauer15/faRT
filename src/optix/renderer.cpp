@@ -259,8 +259,8 @@ OptiXRenderer::initAccelerationStructure() {
             triangle_inputs[geometry_id] = {};
             triangle_inputs[geometry_id].type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
             triangle_inputs[geometry_id].triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
-            triangle_inputs[geometry_id].triangleArray.vertexStrideInBytes = sizeof(AlignedVertex);
-            triangle_inputs[geometry_id].triangleArray.numVertices = geometry.getVertices().size<AlignedVertex>();
+            triangle_inputs[geometry_id].triangleArray.vertexStrideInBytes = geometry.getVertexSize();
+            triangle_inputs[geometry_id].triangleArray.numVertices = geometry.getVertices().sizeInBytes() / geometry.getVertexSize();
             triangle_inputs[geometry_id].triangleArray.vertexBuffers = &triangle_vertex_buffers[geometry_id];
 
             triangle_inputs[geometry_id].triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;

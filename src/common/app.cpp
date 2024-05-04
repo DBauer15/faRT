@@ -3,7 +3,6 @@
 #include <string>
 // Renderer Selection
 #if OPENGL_RENDERER
-#define STAGE_API_USAGE_OPENGL 1
 #include "opengl/renderer.h"
 using DeviceRenderer = fart::OpenGlRenderer;
 #elif METAL_RENDERER
@@ -18,7 +17,9 @@ namespace fart {
 
 App::App(std::string scene) {
     m_renderer = std::make_unique<DeviceRenderer>();
-    m_scene = std::make_shared<Scene>(scene);
+    Config config = {};
+    config.layout = VertexLayout::VertexLayout_Interleaved_VNT;
+    m_scene = std::make_shared<Scene>(scene, config);
     if (!m_scene->isValid()) return;
 
     m_camera = std::make_shared<FirstPersonCamera>(

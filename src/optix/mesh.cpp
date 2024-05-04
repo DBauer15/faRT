@@ -3,7 +3,8 @@
 namespace fart {
 
 OptixGeometry::OptixGeometry(const Geometry& geometry) {
-    m_vertices.alloc_and_upload(geometry.vertices);
+    m_vertex_size = geometry.positions.stride();
+    m_vertices.alloc_and_upload(geometry.positions.data(), geometry.positions.size() * geometry.positions.stride());
     m_indices.alloc_and_upload(geometry.indices);
 }
 

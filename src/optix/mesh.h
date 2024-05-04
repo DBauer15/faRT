@@ -20,7 +20,10 @@ struct OptixGeometry {
         CudaBuffer& getIndices() { return m_indices; }
         OptixGeometrySBTData getSBTData();
 
+        size_t getVertexSize() { return m_vertex_size; }
+
     private:
+        size_t m_vertex_size;
         CudaBuffer m_vertices;
         CudaBuffer m_indices;
 };
