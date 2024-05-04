@@ -7,7 +7,7 @@ namespace fart {
 App::App(std::string scene) {
     m_renderer = std::make_unique<DeviceRenderer>();
     Config config = {};
-    config.vertex_alignment = m_renderer->preferredAlignment();
+    config.vertex_alignment = m_renderer->preferredVertexAlignment();
     m_scene = std::make_shared<Scene>(scene, config);
     if (!m_scene->isValid()) return;
 
