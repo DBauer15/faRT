@@ -43,6 +43,10 @@ struct MetalRenderer : Renderer {
             return "Metal Renderer";
         }
 
+        virtual size_t preferredVertexAlignment() override {
+            return 4;
+        }
+
     private:
         glm::vec3 m_prev_eye, m_prev_dir, m_prev_up;
 

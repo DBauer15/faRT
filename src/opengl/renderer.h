@@ -20,6 +20,10 @@ struct OpenGlRenderer : Renderer {
             return "OpenGL Renderer";
         }
 
+        virtual size_t preferredVertexAlignment() override {
+            return 8;
+        }
+
     private:
         uint32_t m_frame_no { 0 };
         glm::vec3 m_prev_eye, m_prev_dir, m_prev_up;
