@@ -114,7 +114,8 @@ SurfaceInteraction intersect(Ray ray) {
             for (int i = 0; i < node.instance_count; i++) {
                 uint instance = node.first_instance_id + i;
                 Ray ray_backup = ray;
-                mat4 xfm = instances[instance].world_to_instance;
+                mat4 i2w = instances[instance].instance_to_world;
+                mat4 xfm = inverse(i2w);
                 ray.o = vec3(xfm * vec4(ray.o, 1));
                 ray.d = vec3(xfm * vec4(ray.d, 0));
                 ray.rD = 1.f / ray.d;
@@ -124,7 +125,7 @@ SurfaceInteraction intersect(Ray ray) {
                     si.w_o = -ray_backup.d;
 
                     // transform object-space normal to world
-                    si.n = normalize((inverse(xfm) * vec4(si.n, 0.f)).xyz);
+                    si.n = normalize((i2w * vec4(si.n, 0.f)).xyz);
                 }
                 ray_backup.t = ray.t;
                 ray = ray_backup;

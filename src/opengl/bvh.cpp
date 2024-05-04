@@ -15,32 +15,30 @@
  */
 namespace fart {
 
-BVH::BVH(const std::vector<Geometry>& geometries, BVHSplitMethod split_method) {
+BVH::BVH(const Object& object, BVHSplitMethod split_method) {
+    auto& geometries = object.geometries;
     size_t index_offset = 0;
 
-    size_t vertices_size = std::accumulate(geometries.begin(), geometries.end(), 0, [](size_t acc, const Geometry& el) { return acc + el.vertices.size(); });
-    m_vertices.reserve(vertices_size);
+    size_t vertices_size = std::accumulate(geometries.begin(), geometries.end(), 0, [](size_t acc, const Geometry& el) { return acc + el.positions.size(); });
+    m_vertices.resize(vertices_size);
+
+    std::memcpy(m_vertices.data(), object.data->data(), object.data->size());
+
     size_t indices_size = std::accumulate(geometries.begin(), geometries.end(), 0, [](size_t acc, const Geometry& el) { return acc + el.indices.size(); });
     m_indices.reserve(indices_size);
 
     for (auto& geometry : geometries) {
-        m_vertices.insert(m_vertices.end(), geometry.vertices.begin(), geometry.vertices.end());
+        //m_vertices.insert(m_vertices.end(), geometry.vertices.begin(), geometry.vertices.end());
         m_indices.insert(m_indices.end(), geometry.indices.begin(), geometry.indices.end());
 
         std::transform(m_indices.end() - geometry.indices.size(), m_indices.end(), m_indices.end() - geometry.indices.size(), [&](uint32_t index) {
                 return index + index_offset;
         });
-        index_offset += geometry.vertices.size();
+        index_offset += geometry.positions.size();
     }
+
     m_split_method = split_method;
 
-    build();
-}
-
-BVH::BVH(std::vector<AligendVertex>& vertices, std::vector<uint32_t>& indices, BVHSplitMethod split_method) {
-    m_vertices = vertices;
-    m_indices = indices;
-    m_split_method = split_method;
 
     build();
 }
@@ -57,11 +55,12 @@ BVH::build() {
 
     for (size_t i = 0; i < N; ++i) {
         
-        const glm::vec3& t1 = m_vertices[m_indices[3*i]].position;
-        const glm::vec3& t2 = m_vertices[m_indices[3*i+1]].position;
-        const glm::vec3& t3 = m_vertices[m_indices[3*i+2]].position;
+        const auto& t1 = m_vertices[m_indices[3*i]].position;
+        const auto& t2 = m_vertices[m_indices[3*i+1]].position;
+        const auto& t3 = m_vertices[m_indices[3*i+2]].position;
+        const auto c = (t1 + t2 + t3) * (1.f / 3.f);
 
-        m_centroids[i] = (t1 + t2 + t3) / 3.f;
+        m_centroids[i] = glm::make_vec3(&c.x);
     }
 
     uint32_t root_idx = 0;
@@ -84,7 +83,7 @@ BVH::updateNodeBounds( uint32_t node_idx ) {
     node.aabb.max = glm::vec3(-1e30f);
 
     for (uint32_t i = node.first_tri_index_id; i < node.first_tri_index_id + 3 * node.tri_count; i++) {
-        const glm::vec3& t1 = m_vertices[m_indices[i]].position;
+        const glm::vec3& t1 = glm::make_vec3(&m_vertices[m_indices[i]].position.x);
         node.aabb.extend(t1);
     }
 }
@@ -179,9 +178,9 @@ BVH::splitSAH(uint32_t node_idx, float& split_pos, uint32_t& axis) {
             int b = n_buckets * std::clamp(((m_centroids[i / 3][ax] - node.aabb.min[ax]) / node_extent[ax]), 0.f, 1.f);
             if (b == n_buckets) b = n_buckets - 1;
             buckets[b].count += 1;
-            buckets[b].bounds.extend(m_vertices[m_indices[i]].position);
-            buckets[b].bounds.extend(m_vertices[m_indices[i+1]].position);
-            buckets[b].bounds.extend(m_vertices[m_indices[i+2]].position);
+            buckets[b].bounds.extend(glm::make_vec3(&m_vertices[m_indices[i]].position.x));
+            buckets[b].bounds.extend(glm::make_vec3(&m_vertices[m_indices[i+1]].position.x));
+            buckets[b].bounds.extend(glm::make_vec3(&m_vertices[m_indices[i+2]].position.x));
         }
 
         std::vector<float> costs (n_splits);

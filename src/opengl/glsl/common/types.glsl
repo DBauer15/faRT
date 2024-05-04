@@ -67,7 +67,7 @@ struct TLASNode {
 };
 
 struct Instance {
-    mat4 world_to_instance;
+    mat4 instance_to_world;
     uint object_id;
 };
 

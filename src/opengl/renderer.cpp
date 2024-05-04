@@ -27,7 +27,7 @@ OpenGlRenderer::initAccelerationStructures() {
     // Build BLAS BVHs
     std::vector<BVH> bvhs;
     for (const auto& object : m_scene->getObjects()) {
-        BVH bvh(object.geometries);
+        BVH bvh(object);
         bvhs.push_back(bvh);
     }
 

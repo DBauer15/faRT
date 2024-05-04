@@ -3,11 +3,12 @@
 #include <vector>
 
 #include <glm/glm.hpp>
+#include <stage.h>
 
-#include "common/mesh.h"
 #include "aabb.h"
 #include "bvh.h"
 
+using namespace stage;
 
 namespace fart {
 

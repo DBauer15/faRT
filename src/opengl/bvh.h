@@ -1,13 +1,23 @@
 #pragma once
 
-#include "common/mesh.h"
 #include "aabb.h"
 
 #include <vector>
+#include <stage.h>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
+using namespace stage;
+
 namespace fart {
+
+struct Vertex {
+    stage_vec4f position;
+    stage_vec4f normal;
+    stage_vec2f uv;
+    uint32_t material_id;
+    uint32_t padding;
+};
 
 struct BVHSplitBucket {
     AABB bounds;
@@ -28,12 +38,11 @@ enum BVHSplitMethod {
 struct BVH {
 
     public:
-        BVH( const std::vector<Geometry>& geometries, BVHSplitMethod split_method = BVHSplitMethod::SAH );
-        BVH( std::vector<AligendVertex>& vertices, std::vector<uint32_t>& indices, BVHSplitMethod split_method = BVHSplitMethod::SAH );
+        BVH( const Object& object, BVHSplitMethod split_method = BVHSplitMethod::SAH );
 
         size_t getNodesUsed() { return m_nodes_used; }
         std::vector<BVHNode>& getNodes() { return m_bvh_nodes; }
-        std::vector<AligendVertex>& getVertices() { return m_vertices; }
+        std::vector<Vertex>& getVertices() { return m_vertices; }
         std::vector<uint32_t>& getIndices() { return m_indices; }
 
     private:
@@ -44,7 +53,7 @@ struct BVH {
         bool splitSAH(uint32_t node_idx, float& split_pos, uint32_t& axis );
 
         BVHSplitMethod m_split_method;
-        std::vector<AligendVertex> m_vertices;
+        std::vector<Vertex> m_vertices;
         std::vector<uint32_t> m_indices;
 
         std::vector<BVHNode> m_bvh_nodes;

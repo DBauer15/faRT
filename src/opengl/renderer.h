@@ -28,7 +28,7 @@ struct OpenGlRenderer : Renderer {
         std::shared_ptr<Window> m_window;
         std::vector<BVHNode> m_blas_list;
         std::shared_ptr<TLAS> m_tlas;
-        std::vector<AligendVertex> m_vertices_contiguous;
+        std::vector<Vertex> m_vertices_contiguous;
         std::vector<uint32_t> m_indices_contiguous;
 
         std::unique_ptr<Buffer> m_quad;

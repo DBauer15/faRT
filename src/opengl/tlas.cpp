@@ -28,7 +28,7 @@ TLAS::build() {
     m_bvh_node_offsets[0] = 0;
 
     for (size_t i = 0; i < N; ++i) {
-        m_bounds[i] = m_bvhs[m_instances[i].object_id].getNodes()[0].aabb.transform(glm::inverse(m_instances[i].world_to_instance));
+        m_bounds[i] = m_bvhs[m_instances[i].object_id].getNodes()[0].aabb.transform(glm::make_mat4(m_instances[i].instance_to_world.v));
     }
     for (size_t i = 1; i < m_bvhs.size(); i++) {
         m_bvh_node_offsets[i] = m_bvh_node_offsets[i - 1] + m_bvhs[i - 1].getNodesUsed();

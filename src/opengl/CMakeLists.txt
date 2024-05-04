@@ -35,12 +35,14 @@ set_target_properties(renderer_opengl PROPERTIES
     CXX_STANDARD_REQUIRED ON)
 
 target_include_directories(renderer_opengl PUBLIC 
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>/..)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>/..
+    ${STAGE_INCLUDE_DIR})
 
 target_link_libraries(renderer_opengl PUBLIC 
     glm::glm
     glfw
     glad
+    stage
     ${libgl}
     )
 
