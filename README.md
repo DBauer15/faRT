@@ -1,7 +1,7 @@
 # Fabulous Ray Tracer
 ![Preview Image](./img/preview.png)
 
-Hobby project that implements real-time path tracing for various backends to facilitate learning of different graphics APIs and experiment with various rendering techniques like reservor sampling.
+Hobby project that implements real-time path tracing for various backends.
 
 ## Building FaRT
 The project can be built via CMake. Dependencies are included in the repository as submodules. Make sure they are correctly checked out.
