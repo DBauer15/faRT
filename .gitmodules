@@ -10,3 +10,6 @@
 [submodule "dependencies/glm"]
 	path = dependencies/glm
 	url = git@github.com:g-truc/glm.git
+[submodule "dependencies/glfw3webgpu"]
+	path = dependencies/glfw3webgpu
+	url = git@github.com:eliemichel/glfw3webgpu.git
