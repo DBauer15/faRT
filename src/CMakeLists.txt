@@ -1,5 +1,6 @@
 add_subdirectory(opengl)
 add_subdirectory(metal)
+add_subdirectory(webgpu)
 
 add_executable(fart
     common/app.h
@@ -29,6 +30,9 @@ if (BUILD_OPENGL_RENDERER)
 elseif (BUILD_METAL_RENDERER)
     target_link_libraries(fart PUBLIC renderer_metal)
     target_compile_definitions(fart PUBLIC METAL_RENDERER)
+elseif (BUILD_WEBGPU_RENDERER)
+    target_link_libraries(fart PUBLIC renderer_webgpu)
+    target_compile_definitions(fart PUBLIC WEBGPU_RENDERER)
 endif()
 
 install(TARGETS fart

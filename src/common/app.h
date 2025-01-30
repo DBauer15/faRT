@@ -7,6 +7,9 @@ using DeviceRenderer = fart::OpenGlRenderer;
 #elif METAL_RENDERER
 #include "metal/renderer.h"
 using DeviceRenderer = fart::MetalRenderer;
+#elif WEBGPU_RENDERER
+#include "webgpu/renderer.h"
+using DeviceRenderer = fart::WebGPURenderer;
 #endif
 
 #include "camera.h"
