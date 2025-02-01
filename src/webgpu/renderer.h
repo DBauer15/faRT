@@ -38,13 +38,31 @@ struct WebGPURenderer : Renderer {
         WGPUQueue m_queue;
 
         // Pathtracing specific WebGPU objects
+        WGPUComputePipeline m_pathtracing_pipeline      { nullptr };
+        WGPUBindGroupLayout m_bindgroup_layout          { nullptr };
+        WGPUPipelineLayout m_pipeline_layout            { nullptr };
+        WGPUBindGroup m_bindgroup                       { nullptr };
         std::unique_ptr<Texture> m_accum_texture0       { nullptr };
         std::unique_ptr<Texture> m_accum_texture1       { nullptr };
 
+        // WebGPU data resources
+        WGPUBuffer m_input_buffer       { nullptr };
+        WGPUBuffer m_output_buffer      { nullptr };
+        WGPUBuffer m_map_buffer         { nullptr };
+        size_t m_buffersize             { 64 * sizeof(float) };
+
         // Private helper functions
         void initWebGPU();
+        void initBuffers(); /* TODO */
+        void initBindgroupLayout();
+        void initBindgroup();
+        void initPipeline();
+        void initBufferData();
         void renderpassPathtracer();
-        void renderpassPostprocess();
+
+        // TODO: Temporary; remove later
+        void renderpassReadOutputs();
+        bool mappingdone = false;
 };
 
 }
