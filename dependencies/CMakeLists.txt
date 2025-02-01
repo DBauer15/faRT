@@ -1,3 +1,7 @@
+# bin2c
+add_subdirectory(bin2c)
+
+# Glad
 if(BUILD_OPENGL_RENDERER)
     add_subdirectory(glad)
 endif()

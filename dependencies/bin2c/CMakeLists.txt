@@ -1,0 +1,1 @@
+include(bin2c.cmake)
