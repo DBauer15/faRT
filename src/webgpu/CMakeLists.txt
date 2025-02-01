@@ -9,6 +9,9 @@ add_library(renderer_webgpu
     texture.h
 )
 
+set(SHADERS ${CMAKE_CURRENT_LIST_DIR}/wgsl/pathtracer.wgsl)
+embed_shaders(renderer_webgpu embedded_shaders ${SHADERS} TRUE)
+
 set_target_properties(renderer_webgpu PROPERTIES 
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON)

@@ -53,7 +53,8 @@ struct WebGPURenderer : Renderer {
 
         // Private helper functions
         void initWebGPU();
-        void initBuffers(); /* TODO */
+        void initBuffers(); 
+        void initTextures();
         void initBindgroupLayout();
         void initBindgroup();
         void initPipeline();

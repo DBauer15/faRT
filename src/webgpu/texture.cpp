@@ -10,6 +10,7 @@ Texture::Texture(WGPUSurface surface) {
     if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
         return;
     }
+    m_texture = surface_texture.texture;
 
     WGPUTextureViewDescriptor view_descriptor;
     view_descriptor.nextInChain = nullptr;
@@ -21,18 +22,24 @@ Texture::Texture(WGPUSurface surface) {
     view_descriptor.baseArrayLayer = 0;
     view_descriptor.arrayLayerCount = 1;
     view_descriptor.aspect = WGPUTextureAspect_All;
-    m_texture = wgpuTextureCreateView(surface_texture.texture, &view_descriptor);
+    m_texture_view = wgpuTextureCreateView(surface_texture.texture, &view_descriptor);
 }
 
 Texture::~Texture() {
-    if (m_texture) {
-        wgpuTextureViewRelease(m_texture);
+    if (m_texture_view) {
+        wgpuTextureViewRelease(m_texture_view);
     }
 }
 
-void
-Texture::clear() {
+WGPUImageCopyTexture 
+Texture::getImageCopyTexture() {
+    WGPUImageCopyTexture copy_texture = {};
+    copy_texture.aspect = WGPUTextureAspect_All;
+    copy_texture.mipLevel = 0;
+    copy_texture.origin = {0, 0, 0};
+    copy_texture.texture = getTexture();
 
+    return copy_texture;
 }
 
 }

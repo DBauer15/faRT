@@ -1,6 +1,8 @@
 #include "renderer.h"
 #include <glfw3webgpu.h>
 
+#include <embedded_shaders.h>
+
 namespace fart {
 
 WebGPURenderer::~WebGPURenderer()
@@ -102,6 +104,10 @@ WebGPURenderer::initBuffers() {
 }
 
 void
+WebGPURenderer::initTextures() {
+}
+
+void
 WebGPURenderer::initBindgroupLayout() {
     std::vector<WGPUBindGroupLayoutEntry> bindings(2);
 
@@ -151,18 +157,10 @@ WebGPURenderer::initBindgroup() {
 void
 WebGPURenderer::initPipeline() {
     // create shader module
-    std::string shader_code = 
-        "@group(0) @binding(0) var<storage,read> inputBuffer: array<f32,64>;"
-        "@group(0) @binding(1) var<storage,read_write> outputBuffer: array<f32,64>;"
-        "@compute @workgroup_size(32)"
-        "fn pathtracer(@builtin(global_invocation_id) id: vec3<u32>) {"
-        "outputBuffer[id.x] = 2.0 * inputBuffer[id.x] + 1.0;"
-        "}";
-
     WGPUShaderModuleWGSLDescriptor shader_code_descriptor = {};
     shader_code_descriptor.chain.next = nullptr;
     shader_code_descriptor.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
-    shader_code_descriptor.code = shader_code.c_str();
+    shader_code_descriptor.code = (char*)pathtracer_wgsl;
 
     WGPUShaderModuleDescriptor shader_descriptor = {};
     shader_descriptor.hintCount = 0;
@@ -201,6 +199,8 @@ WebGPURenderer::initBufferData() {
 void 
 WebGPURenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3 up, RenderStats& render_stats) 
 {
+    auto t_start = std::chrono::high_resolution_clock::now();
+
     // Resize framebuffer if needed
     resizeSurface(m_surface, m_adapter, m_device, m_window->getWidth(), m_window->getHeight());
 
@@ -213,6 +213,9 @@ WebGPURenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
     // Present framebuffer
 	wgpuSurfacePresent(m_surface);
 
+    auto frame_time_mus = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t_start);
+    render_stats.frame_time_ms = frame_time_mus.count() * 0.001f;
+
 }
 
 void WebGPURenderer::renderpassPathtracer()
@@ -220,7 +223,7 @@ void WebGPURenderer::renderpassPathtracer()
 
 
     Texture draw_target(m_surface);
-    if (!draw_target.getTexture())
+    if (!draw_target.getTextureView())
     {
         WARN("Could not get draw target from surface");
         return;
@@ -264,7 +267,7 @@ WebGPURenderer::renderpassReadOutputs() {
             if (status == WGPUBufferMapAsyncStatus_Success) {
                 const float* output = (const float*)wgpuBufferGetConstMappedRange(renderer->m_map_buffer, 0, renderer->m_buffersize);
 
-                for (int i = 0; i < renderer->m_buffersize/sizeof(float); ++i) {
+                for (size_t i = 0; i < renderer->m_buffersize/sizeof(float); ++i) {
                     LOG(output[i]);
                 }
             }

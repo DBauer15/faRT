@@ -12,13 +12,14 @@ struct Texture {
         Texture(WGPUSurface surface);
         ~Texture();
 
-        void clear();
-
-        WGPUTextureView getTexture() { return m_texture; }
+        WGPUTexture getTexture()                    { return m_texture; }
+        WGPUTextureView getTextureView()            { return m_texture_view; }
+        WGPUImageCopyTexture getImageCopyTexture();
         
     
     private:
-        WGPUTextureView m_texture   { nullptr };
+        WGPUTexture m_texture                       { nullptr };
+        WGPUTextureView m_texture_view              { nullptr };
 
         uint32_t m_width        { 0 };
         uint32_t m_height       { 0 };
