@@ -43,7 +43,10 @@ struct WebGPURenderer : Renderer {
 
         // Pathtracing specific WebGPU objects
         std::unique_ptr<Shader> m_pathtracing_shader    { nullptr };
-        std::unique_ptr<Pipeline> m_pathtracing_pipeline { nullptr };
+        std::unique_ptr<ComputePipeline> m_pathtracing_pipeline { nullptr };
+        std::unique_ptr<Shader> m_postprocessing_shader_vert { nullptr };
+        std::unique_ptr<Shader> m_postprocessing_shader_frag { nullptr };
+        std::unique_ptr<RenderPipeline> m_postprocessing_pipeline { nullptr };
         std::unique_ptr<Texture> m_accum_texture0       { nullptr };
         std::unique_ptr<Texture> m_accum_texture1       { nullptr };
 
@@ -51,24 +54,17 @@ struct WebGPURenderer : Renderer {
         std::unique_ptr<Buffer<float>> m_input_buffer   { nullptr };
         std::unique_ptr<Buffer<float>> m_output_buffer  { nullptr };
         std::unique_ptr<Buffer<float>> m_map_buffer     { nullptr };
-        // WGPUBuffer m_input_buffer       { nullptr };
-        // WGPUBuffer m_output_buffer      { nullptr };
-        // WGPUBuffer m_map_buffer         { nullptr };
-        // size_t m_buffersize             { 64 * sizeof(float) };
+        std::unique_ptr<Buffer<float>> m_fullscreen_quad { nullptr };
 
         // Private helper functions
         void initWebGPU();
         void initBuffers(); 
         void initTextures();
-        // void initBindgroupLayout();
-        // void initBindgroup();
         void initPipeline();
         void initBufferData();
         void renderpassPathtracer();
+        void renderpassPostprocess();
 
-        // TODO: Temporary; remove later
-        void renderpassReadOutputs();
-        bool mappingdone = false;
 };
 
 }

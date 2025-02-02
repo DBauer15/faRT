@@ -15,7 +15,7 @@ add_library(renderer_webgpu
     texture.h
 )
 
-set(SHADERS ${CMAKE_CURRENT_LIST_DIR}/wgsl/pathtracer.wgsl)
+set(SHADERS ${CMAKE_CURRENT_LIST_DIR}/wgsl/pathtracer.wgsl,${CMAKE_CURRENT_LIST_DIR}/wgsl/postprocess.wgsl)
 embed_shaders(renderer_webgpu embedded_shaders ${SHADERS} TRUE)
 
 set_target_properties(renderer_webgpu PROPERTIES 

@@ -23,12 +23,13 @@ struct Texture {
 
         void resize(WGPUDevice device, const uint32_t width, const uint32_t height);
 
-        WGPUTexture getTexture()                    { return m_texture; }
-        WGPUTextureView getTextureView()            { return m_texture_view; }
+        WGPUTexture getTexture() const              { return m_texture; }
+        WGPUTextureView getTextureView() const      { return m_texture_view; }
         WGPUImageCopyTexture getImageCopyTexture();
         
     
     private:
+        bool m_owns_texture                         { true };
         WGPUTexture m_texture                       { nullptr };
         WGPUTextureView m_texture_view              { nullptr };
 

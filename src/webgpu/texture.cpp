@@ -11,6 +11,9 @@ Texture::Texture(WGPUSurface surface) {
         return;
     }
 
+    m_texture = surface_texture.texture;
+    m_owns_texture = false;
+
     WGPUTextureViewDescriptor view_descriptor;
     view_descriptor.nextInChain = nullptr;
     view_descriptor.label = "Surface texture view";
@@ -63,7 +66,7 @@ Texture::operator=(Texture&& other) {
 }
 
 Texture::~Texture() {
-    if (m_texture) {
+    if (m_texture && m_owns_texture) {
         wgpuTextureRelease(m_texture);
     }
     if (m_texture_view) {
@@ -78,6 +81,9 @@ Texture::resize(WGPUDevice device, const uint32_t width, const uint32_t height) 
     if (m_texture) {
         wgpuTextureRelease(m_texture);
     }
+    if (m_texture_view) {
+        wgpuTextureViewRelease(m_texture_view);
+    }
 
     WGPUTextureDescriptor descriptor = {};
     descriptor.nextInChain = nullptr;
@@ -91,6 +97,17 @@ Texture::resize(WGPUDevice device, const uint32_t width, const uint32_t height) 
     descriptor.viewFormats = nullptr;
 
     m_texture = wgpuDeviceCreateTexture(device, &descriptor);
+
+    WGPUTextureViewDescriptor view_descriptor;
+    view_descriptor.aspect = WGPUTextureAspect_All;
+    view_descriptor.baseArrayLayer = 0;
+    view_descriptor.arrayLayerCount = 1;
+    view_descriptor.baseMipLevel = 0;
+    view_descriptor.mipLevelCount = 1;
+    view_descriptor.dimension = WGPUTextureViewDimension_2D;
+    view_descriptor.format = descriptor.format;
+
+    m_texture_view = wgpuTextureCreateView(m_texture, &view_descriptor);
 }
 
 WGPUImageCopyTexture 
