@@ -10,7 +10,6 @@ Texture::Texture(WGPUSurface surface) {
     if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_Success) {
         return;
     }
-    m_texture = surface_texture.texture;
 
     WGPUTextureViewDescriptor view_descriptor;
     view_descriptor.nextInChain = nullptr;
@@ -25,10 +24,73 @@ Texture::Texture(WGPUSurface surface) {
     m_texture_view = wgpuTextureCreateView(surface_texture.texture, &view_descriptor);
 }
 
+Texture::Texture(WGPUDevice device,
+                const uint32_t width,
+                const uint32_t height,
+                WGPUTextureFormat format,
+                WGPUTextureUsage usage) {
+
+    m_format = format;
+    m_usage = usage;
+
+    resize(device, width, height);
+}
+
+Texture::Texture(Texture&& other) {
+    m_texture = other.m_texture;
+    m_format = other.m_format;
+    m_usage = other.m_usage;
+    m_width = other.m_width;
+    m_height = other.m_height;
+    
+    other.m_texture = nullptr;
+}
+
+Texture&
+Texture::operator=(Texture&& other) {
+    if (m_texture) {
+        wgpuTextureRelease(m_texture);
+    }
+    m_texture = other.m_texture;
+    m_format = other.m_format;
+    m_usage = other.m_usage;
+    m_width = other.m_width;
+    m_height = other.m_height; 
+
+    other.m_texture = nullptr;
+
+    return *this;
+}
+
 Texture::~Texture() {
+    if (m_texture) {
+        wgpuTextureRelease(m_texture);
+    }
     if (m_texture_view) {
         wgpuTextureViewRelease(m_texture_view);
     }
+}
+
+void 
+Texture::resize(WGPUDevice device, const uint32_t width, const uint32_t height) {
+    m_width = width;
+    m_height = height;
+    if (m_texture) {
+        wgpuTextureRelease(m_texture);
+    }
+
+    WGPUTextureDescriptor descriptor = {};
+    descriptor.nextInChain = nullptr;
+    descriptor.dimension = WGPUTextureDimension_2D;
+    descriptor.format = m_format;
+    descriptor.mipLevelCount = 1;
+    descriptor.sampleCount = 1;
+    descriptor.size = { m_width, m_height };
+    descriptor.usage = m_usage;
+    descriptor.viewFormatCount = 0;
+    descriptor.viewFormats = nullptr;
+
+    m_texture = wgpuDeviceCreateTexture(device, &descriptor);
 }
 
 WGPUImageCopyTexture 
