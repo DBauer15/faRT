@@ -14,8 +14,6 @@ Shader::Shader(WGPUDevice device,
     shader_code_descriptor.code = source;
 
     WGPUShaderModuleDescriptor shader_descriptor = {};
-    shader_descriptor.hintCount = 0;
-    shader_descriptor.hints = nullptr;
     shader_descriptor.nextInChain = &shader_code_descriptor.chain;
 
     m_shader = wgpuDeviceCreateShaderModule(device, &shader_descriptor);

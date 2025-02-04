@@ -25,7 +25,7 @@ Pipeline::addTextureBinding(const Texture &texture, uint32_t binding, WGPUTextur
 void
 Pipeline::commit(WGPUDevice device) {
     // create bindgroup layout
-    WGPUBindGroupLayoutDescriptor bindgroup_layout_descriptor;
+    WGPUBindGroupLayoutDescriptor bindgroup_layout_descriptor = {};
     bindgroup_layout_descriptor.entries = m_bindgroup_layout_entries.data();
     bindgroup_layout_descriptor.entryCount = m_bindgroup_layout_entries.size();
 

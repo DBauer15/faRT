@@ -7,7 +7,9 @@ if(BUILD_OPENGL_RENDERER)
 endif()
 
 # GLFW
-add_subdirectory(glfw)
+if (NOT EMSCRIPTEN)
+    add_subdirectory(glfw)
+endif()
 
 # GLM
 add_subdirectory(glm)

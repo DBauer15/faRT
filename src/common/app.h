@@ -35,6 +35,7 @@ struct App {
         void run();
 
     private:
+        void processFrame();
         glm::vec3 keyboardInputToMovementVector();
 
         bool m_camera_mode_changed { false };

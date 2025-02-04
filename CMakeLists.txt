@@ -9,11 +9,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if (NOT WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+    if (EMSCRIPTEN)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=sign-conversion -Wno-error=unsafe-buffer-usage-in-libc-call -Wno-error=unsafe-buffer-usage")
+    endif()
 endif()
 
 # Compile options
-option(BUILD_OPENGL_RENDERER "Build the OpenGL renderer." OFF)
-option(BUILD_METAL_RENDERER "Build the Metal renderer." OFF)
+if (NOT EMSCRIPTEN)
+    option(BUILD_OPENGL_RENDERER "Build the OpenGL renderer." OFF)
+    option(BUILD_METAL_RENDERER "Build the Metal renderer." OFF)
+endif()
 option(BUILD_WEBGPU_RENDERER "Build the WebGPU renderer." OFF)
 
 # Write all binaries directly to the build directory

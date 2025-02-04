@@ -1,4 +1,8 @@
 #include "renderer.h"
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 #include <glfw3webgpu.h>
 
 #include <embedded_shaders.h>
@@ -43,8 +47,11 @@ WebGPURenderer::initWebGPU()
 {
     WGPUInstanceDescriptor desc = {};
     desc.nextInChain = nullptr;
-    
+#ifdef WEBGPU_BACKEND_EMSCRIPTEN 
+    m_instance = wgpuCreateInstance(nullptr);
+#else
     m_instance = wgpuCreateInstance(&desc);
+#endif
     if (!m_instance)
     {
         ERR("Could not initilzie WebGPU Instance");
@@ -120,7 +127,9 @@ WebGPURenderer::initPipeline() {
     m_postprocessing_pipeline->commit(m_device);
 
     /* we need this since we createa a texture from the surface without invalidating it */
+#ifndef __EMSCRIPTEN__
     wgpuSurfacePresent(m_surface);
+#endif
 }
 
 void
@@ -159,7 +168,9 @@ WebGPURenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
     renderpassPostprocess();
 
     // Present framebuffer
+#ifndef __EMSCRIPTEN__
 	wgpuSurfacePresent(m_surface);
+#endif
 
     auto frame_time_mus = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t_start);
     render_stats.frame_time_ms = frame_time_mus.count() * 0.001f;
@@ -217,6 +228,9 @@ WebGPURenderer::renderpassPostprocess() {
 	color_attachment.loadOp = WGPULoadOp_Clear;
 	color_attachment.storeOp = WGPUStoreOp_Store;
 	color_attachment.clearValue = WGPUColor{ 0.05, 0.05, 0.05, 1.0 };
+#ifndef WEBGPU_BACKEND_WGPU
+    color_attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+#endif 
 
     // Create render pass
     WGPURenderPassDescriptor renderpass_descriptor = {};
@@ -287,6 +301,12 @@ WebGPURenderer::requestAdapterSync(WGPUInstance instance)
         onAdapterRequestEnded,
         (void*)&userData
     );
+
+#ifdef __EMSCRIPTEN__
+    while (!userData.requestEnded) {
+        emscripten_sleep(100);
+    }
+#endif
 
     assert(userData.requestEnded);
 
@@ -361,6 +381,12 @@ WebGPURenderer::requestDeviceSync(WGPUAdapter adapter)
         onDeviceRequestEnded,
         (void*)&userData
     );
+
+#ifdef __EMSCRIPTEN__
+    while (!userData.requestEnded) {
+        emscripten_sleep(100);
+    }
+#endif 
 
     assert(userData.requestEnded);
 
