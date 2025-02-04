@@ -48,9 +48,9 @@ Pipeline::commit(WGPUDevice device) {
 }
 
 void
-ComputePipeline::addShader(const Shader &shader) {
+ComputePipeline::addShader(const Shader &shader, std::string entrypoint) {
     m_shader = shader.getShader();
-    m_shader_entrypoint = shader.getEntrypoint();
+    m_shader_entrypoint = entrypoint;
 }
 
 void
@@ -84,15 +84,15 @@ RenderPipeline::addColorTarget(const Texture &target) {
 }
 
 void 
-RenderPipeline::addVertexShader(const Shader &shader) {
+RenderPipeline::addVertexShader(const Shader &shader, std::string entrypoint) {
     m_vertex_shader = shader.getShader();
-    m_vertex_shader_entrypoint = shader.getEntrypoint();
+    m_vertex_shader_entrypoint = entrypoint;
 }
 
 void 
-RenderPipeline::addFragmentShader(const Shader &shader) {
+RenderPipeline::addFragmentShader(const Shader &shader, std::string entrypoint) {
     m_fragment_shader = shader.getShader();
-    m_fragment_shader_entrypoint = shader.getEntrypoint();
+    m_fragment_shader_entrypoint = entrypoint;
 }
 
 void 

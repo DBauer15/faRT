@@ -103,25 +103,22 @@ WebGPURenderer::initTextures() {
 void
 WebGPURenderer::initPipeline() {
     // create shader modules
-    m_pathtracing_shader = std::make_unique<Shader>(m_device, (char*)pathtracer_wgsl, "pathtracer");
-
-    /* TODO: Avoid the need for two shader instances */
-    m_postprocessing_shader_vert = std::make_unique<Shader>(m_device, (char*)postprocess_wgsl, "vs_main");
-    m_postprocessing_shader_frag = std::make_unique<Shader>(m_device, (char*)postprocess_wgsl, "fs_main");
+    m_pathtracing_shader = std::make_unique<Shader>(m_device, (char*)pathtracer_wgsl);
+    m_postprocessing_shader = std::make_unique<Shader>(m_device, (char*)postprocess_wgsl);
 
     // create pathtracing pipeline
     m_pathtracing_pipeline = std::make_unique<ComputePipeline>();
     m_pathtracing_pipeline->addBufferBinding(*m_input_buffer, 0, WGPUBufferBindingType_ReadOnlyStorage, WGPUShaderStage_Compute);
     m_pathtracing_pipeline->addBufferBinding(*m_output_buffer, 1, WGPUBufferBindingType_Storage, WGPUShaderStage_Compute);
-    m_pathtracing_pipeline->addShader(*m_pathtracing_shader);
+    m_pathtracing_pipeline->addShader(*m_pathtracing_shader, "pathtracer");
     m_pathtracing_pipeline->commit(m_device);
 
     // create postprocessing pipeline
     Texture draw_target(m_surface);
     m_postprocessing_pipeline = std::make_unique<RenderPipeline>();
     m_postprocessing_pipeline->addColorTarget(draw_target);
-    m_postprocessing_pipeline->addVertexShader(*m_postprocessing_shader_vert);
-    m_postprocessing_pipeline->addFragmentShader(*m_postprocessing_shader_frag);
+    m_postprocessing_pipeline->addVertexShader(*m_postprocessing_shader, "vs_main");
+    m_postprocessing_pipeline->addFragmentShader(*m_postprocessing_shader, "fs_main");
     m_postprocessing_pipeline->addVertexAttribute(0, 0, WGPUVertexFormat_Float32x2, 0L);
     m_postprocessing_pipeline->addVertexBuffer(*m_fullscreen_quad, 2);
     m_postprocessing_pipeline->commit(m_device);

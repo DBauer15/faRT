@@ -55,7 +55,7 @@ struct Pipeline {
 
 struct ComputePipeline : public Pipeline {
     public:
-        void addShader(const Shader &shader);
+        void addShader(const Shader &shader, std::string entrypoint);
 
         virtual void commit(WGPUDevice device) override;
 
@@ -70,8 +70,8 @@ struct ComputePipeline : public Pipeline {
 struct RenderPipeline : public Pipeline {
     public:
         void addColorTarget(const Texture &target);
-        void addVertexShader(const Shader &shader);
-        void addFragmentShader(const Shader &shader);
+        void addVertexShader(const Shader &shader, std::string entrypoint);
+        void addFragmentShader(const Shader &shader, std::string entrypoint);
         void addVertexAttribute(uint32_t buffer_id, uint32_t location, WGPUVertexFormat format, uint64_t offset);
 
         template<typename T>

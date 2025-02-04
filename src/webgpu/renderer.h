@@ -44,8 +44,7 @@ struct WebGPURenderer : Renderer {
         // Pathtracing specific WebGPU objects
         std::unique_ptr<Shader> m_pathtracing_shader    { nullptr };
         std::unique_ptr<ComputePipeline> m_pathtracing_pipeline { nullptr };
-        std::unique_ptr<Shader> m_postprocessing_shader_vert { nullptr };
-        std::unique_ptr<Shader> m_postprocessing_shader_frag { nullptr };
+        std::unique_ptr<Shader> m_postprocessing_shader { nullptr };
         std::unique_ptr<RenderPipeline> m_postprocessing_pipeline { nullptr };
         std::unique_ptr<Texture> m_accum_texture0       { nullptr };
         std::unique_ptr<Texture> m_accum_texture1       { nullptr };
