@@ -39,6 +39,10 @@ struct Pipeline {
                                uint32_t binding,
                                WGPUTextureSampleType sample_type,
                                WGPUShaderStageFlags visibility);
+        void addStorageTextureBinding(const Texture &texture,
+                                      uint32_t binding,
+                                      WGPUStorageTextureAccess access,
+                                      WGPUShaderStageFlags visibility);
 
         virtual void commit(WGPUDevice device);
 

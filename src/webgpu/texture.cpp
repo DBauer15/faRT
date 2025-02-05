@@ -91,7 +91,7 @@ Texture::resize(WGPUDevice device, const uint32_t width, const uint32_t height) 
     descriptor.format = m_format;
     descriptor.mipLevelCount = 1;
     descriptor.sampleCount = 1;
-    descriptor.size = { m_width, m_height };
+    descriptor.size = { m_width, m_height, 1 };
     descriptor.usage = m_usage;
     descriptor.viewFormatCount = 0;
     descriptor.viewFormats = nullptr;

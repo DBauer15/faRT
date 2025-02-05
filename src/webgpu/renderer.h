@@ -32,7 +32,7 @@ struct WebGPURenderer : Renderer {
         // Helper functions for WebGPU
         WGPUAdapter requestAdapterSync(WGPUInstance instance);
         WGPUDevice  requestDeviceSync(WGPUAdapter adapter);
-        void        resizeSurface(WGPUSurface surface, WGPUAdapter adapter, WGPUDevice device, uint32_t width, uint32_t height);
+        void        resize(WGPUSurface surface, WGPUAdapter adapter, WGPUDevice device, uint32_t width, uint32_t height);
 
         // Objects related to WebGPU
         WGPUSurface m_surface;
@@ -52,7 +52,6 @@ struct WebGPURenderer : Renderer {
         // WebGPU data resources
         std::unique_ptr<Buffer<float>> m_input_buffer   { nullptr };
         std::unique_ptr<Buffer<float>> m_output_buffer  { nullptr };
-        std::unique_ptr<Buffer<float>> m_map_buffer     { nullptr };
         std::unique_ptr<Buffer<float>> m_fullscreen_quad { nullptr };
 
         // Private helper functions

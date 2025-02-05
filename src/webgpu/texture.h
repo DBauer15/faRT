@@ -25,6 +25,9 @@ struct Texture {
 
         WGPUTexture getTexture() const              { return m_texture; }
         WGPUTextureView getTextureView() const      { return m_texture_view; }
+        WGPUTextureUsage getUsage() const           { return m_usage; }
+        WGPUTextureFormat getFormat() const         { return m_format; }
+        WGPUTextureViewDimension getViewDimension() const   { return WGPUTextureViewDimension_2D; }
         WGPUImageCopyTexture getImageCopyTexture();
         
     

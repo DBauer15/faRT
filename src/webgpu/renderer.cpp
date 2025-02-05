@@ -37,9 +37,9 @@ WebGPURenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &win
 
     initWebGPU();
     initBuffers();
+    initTextures();
     initPipeline();
     initBufferData();
-
 }
 
 void 
@@ -77,7 +77,7 @@ WebGPURenderer::initWebGPU()
 
     m_queue = wgpuDeviceGetQueue(m_device);
 
-    resizeSurface(m_surface, m_adapter, m_device, m_window->getWidth(), m_window->getHeight());
+    resize(m_surface, m_adapter, m_device, m_window->getWidth(), m_window->getHeight());
 }
 
 void
@@ -88,15 +88,15 @@ WebGPURenderer::initBuffers() {
     // create output buffer
     m_output_buffer = std::make_unique<Buffer<float>>(m_device, 64L, (WGPUBufferUsage)(WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc));
 
-    // create copy buffer
-    m_map_buffer = std::make_unique<Buffer<float>>(m_device, 64L, (WGPUBufferUsage)(WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead));
-
     // create fullscreen quad buffer
     m_fullscreen_quad = std::make_unique<Buffer<float>>(m_device, 12L, (WGPUBufferUsage)(WGPUBufferUsage_Vertex | WGPUBufferUsage_CopyDst));
 }
 
 void
 WebGPURenderer::initTextures() {
+    WGPUTextureUsage usage = (WGPUTextureUsage)(WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding);
+    m_accum_texture0 = std::make_unique<Texture>(m_device, m_window->getWidth(), m_window->getHeight(), WGPUTextureFormat_RGBA16Float, usage);
+    m_accum_texture1 = std::make_unique<Texture>(m_device, m_window->getWidth(), m_window->getHeight(), WGPUTextureFormat_RGBA16Float, usage);
 }
 
 
@@ -110,6 +110,8 @@ WebGPURenderer::initPipeline() {
     m_pathtracing_pipeline = std::make_unique<ComputePipeline>();
     m_pathtracing_pipeline->addBufferBinding(*m_input_buffer, 0, WGPUBufferBindingType_ReadOnlyStorage, WGPUShaderStage_Compute);
     m_pathtracing_pipeline->addBufferBinding(*m_output_buffer, 1, WGPUBufferBindingType_Storage, WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->addStorageTextureBinding(*m_accum_texture0, 2, WGPUStorageTextureAccess_ReadOnly,WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->addStorageTextureBinding(*m_accum_texture1, 3, WGPUStorageTextureAccess_WriteOnly, WGPUShaderStage_Compute);
     m_pathtracing_pipeline->addShader(*m_pathtracing_shader, "pathtracer");
     m_pathtracing_pipeline->commit(m_device);
 
@@ -121,6 +123,7 @@ WebGPURenderer::initPipeline() {
     m_postprocessing_pipeline->addFragmentShader(*m_postprocessing_shader, "fs_main");
     m_postprocessing_pipeline->addVertexAttribute(0, 0, WGPUVertexFormat_Float32x2, 0L);
     m_postprocessing_pipeline->addVertexBuffer(*m_fullscreen_quad, 2);
+    m_postprocessing_pipeline->addTextureBinding(*m_accum_texture1, 0, WGPUTextureSampleType_Float, WGPUShaderStage_Fragment);
     m_postprocessing_pipeline->commit(m_device);
 
     /* we need this since we createa a texture from the surface without invalidating it */
@@ -156,7 +159,7 @@ WebGPURenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
     auto t_start = std::chrono::high_resolution_clock::now();
 
     // Resize framebuffer if needed
-    resizeSurface(m_surface, m_adapter, m_device, m_window->getWidth(), m_window->getHeight());
+    resize(m_surface, m_adapter, m_device, m_window->getWidth(), m_window->getHeight());
 
     // Run pathtracing pass
     renderpassPathtracer();
@@ -189,11 +192,11 @@ void WebGPURenderer::renderpassPathtracer()
     // Configure compute pass
     wgpuComputePassEncoderSetPipeline(computepass_encoder, m_pathtracing_pipeline->getComputePipeline());
     wgpuComputePassEncoderSetBindGroup(computepass_encoder, 0, m_pathtracing_pipeline->getBindGroup(), 0, nullptr);
-    wgpuComputePassEncoderDispatchWorkgroups(computepass_encoder, 2, 1, 1);
-    wgpuComputePassEncoderEnd(computepass_encoder);
 
-    // Get ouputs
-    wgpuCommandEncoderCopyBufferToBuffer(command_encoder, m_output_buffer->getBuffer(), 0, m_map_buffer->getBuffer(), 0, m_output_buffer->getSize());
+    size_t dispatch_size_x = (m_window->getWidth() + 31) / 32;
+    size_t dispatch_size_y = (m_window->getHeight() + 31) / 32;
+    wgpuComputePassEncoderDispatchWorkgroups(computepass_encoder, dispatch_size_x, dispatch_size_y, 1);
+    wgpuComputePassEncoderEnd(computepass_encoder);
 
     // Submit work
     WGPUCommandBuffer command_buffer = wgpuCommandEncoderFinish(command_encoder, nullptr);
@@ -332,16 +335,17 @@ WebGPURenderer::requestDeviceSync(WGPUAdapter adapter)
 	required_limits.limits.maxTextureDimension3D = 2048; 
 	required_limits.limits.maxTextureArrayLayers = 1;
 	required_limits.limits.maxSampledTexturesPerShaderStage = 3;
+    required_limits.limits.maxStorageTexturesPerShaderStage = 3;
 	required_limits.limits.maxSamplersPerShaderStage = 1;
 	required_limits.limits.maxInterStageShaderComponents = 17;
 	required_limits.limits.maxStorageBuffersPerShaderStage = 2;
 	required_limits.limits.maxComputeWorkgroupSizeX = 32;
-	required_limits.limits.maxComputeWorkgroupSizeY = 1;
+	required_limits.limits.maxComputeWorkgroupSizeY = 32;
 	required_limits.limits.maxComputeWorkgroupSizeZ = 1;
-	required_limits.limits.maxComputeInvocationsPerWorkgroup = 32;
-	required_limits.limits.maxComputeWorkgroupsPerDimension = 2;
+	required_limits.limits.maxComputeInvocationsPerWorkgroup = 1024;
+	required_limits.limits.maxComputeWorkgroupsPerDimension = 192;
     required_limits.limits.maxStorageBufferBindingSize = 64 * 4;
-    required_limits.limits.maxBindingsPerBindGroup = 2;
+    required_limits.limits.maxBindingsPerBindGroup = 3;
 
     WGPUDeviceDescriptor descriptor = {};
     descriptor.nextInChain = nullptr;
@@ -391,8 +395,9 @@ WebGPURenderer::requestDeviceSync(WGPUAdapter adapter)
 }
 
 void
-WebGPURenderer::resizeSurface(WGPUSurface surface, WGPUAdapter adapter, WGPUDevice device, uint32_t width, uint32_t height)
+WebGPURenderer::resize(WGPUSurface surface, WGPUAdapter adapter, WGPUDevice device, uint32_t width, uint32_t height)
 {
+    // resize surface
     WGPUSurfaceConfiguration config = {};
     config.nextInChain = nullptr;
     config.width = width;
@@ -410,6 +415,9 @@ WebGPURenderer::resizeSurface(WGPUSurface surface, WGPUAdapter adapter, WGPUDevi
     config.alphaMode = WGPUCompositeAlphaMode_Auto;
 
     wgpuSurfaceConfigure(surface, &config);
+
+    // resize textures
+    // TODO: implement this
 }
 
 }

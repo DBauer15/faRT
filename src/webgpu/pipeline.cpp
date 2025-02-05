@@ -7,10 +7,10 @@ void
 Pipeline::addTextureBinding(const Texture &texture, uint32_t binding, WGPUTextureSampleType sample_type, WGPUShaderStageFlags visibility) {
     WGPUBindGroupLayoutEntry layout_entry = {};
     layout_entry.binding = binding;
+    layout_entry.visibility = visibility;
     layout_entry.texture.multisampled = false;
     layout_entry.texture.viewDimension = WGPUTextureViewDimension_2D;
     layout_entry.texture.sampleType = sample_type;
-    layout_entry.visibility = visibility;
 
     m_bindgroup_layout_entries.push_back(layout_entry);
 
@@ -21,6 +21,23 @@ Pipeline::addTextureBinding(const Texture &texture, uint32_t binding, WGPUTextur
     m_bindgroup_entries.push_back(bindgroup_entry);
 }
 
+void
+Pipeline::addStorageTextureBinding(const Texture &texture, uint32_t binding, WGPUStorageTextureAccess access, WGPUShaderStageFlags visibility) {
+    WGPUBindGroupLayoutEntry layout_entry = {};
+    layout_entry.binding = binding;
+    layout_entry.visibility = visibility;
+    layout_entry.storageTexture.access = WGPUStorageTextureAccess_WriteOnly;
+    layout_entry.storageTexture.format = texture.getFormat();
+    layout_entry.storageTexture.viewDimension = texture.getViewDimension();
+
+    m_bindgroup_layout_entries.push_back(layout_entry);
+
+    WGPUBindGroupEntry bindgroup_entry = {};
+    bindgroup_entry.binding = binding;
+    bindgroup_entry.textureView = texture.getTextureView();
+
+    m_bindgroup_entries.push_back(bindgroup_entry);
+}
 
 void
 Pipeline::commit(WGPUDevice device) {
