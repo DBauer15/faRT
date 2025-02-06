@@ -76,8 +76,12 @@ Texture::~Texture() {
 
 void 
 Texture::resize(WGPUDevice device, const uint32_t width, const uint32_t height) {
+    if (m_width == width && m_height == height) {
+        return;
+    }
     m_width = width;
     m_height = height;
+
     if (m_texture) {
         wgpuTextureRelease(m_texture);
     }

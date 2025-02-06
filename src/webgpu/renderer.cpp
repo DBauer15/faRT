@@ -108,22 +108,22 @@ WebGPURenderer::initPipeline() {
 
     // create pathtracing pipeline
     m_pathtracing_pipeline = std::make_unique<ComputePipeline>();
-    m_pathtracing_pipeline->addBufferBinding(*m_input_buffer, 0, WGPUBufferBindingType_ReadOnlyStorage, WGPUShaderStage_Compute);
-    m_pathtracing_pipeline->addBufferBinding(*m_output_buffer, 1, WGPUBufferBindingType_Storage, WGPUShaderStage_Compute);
-    m_pathtracing_pipeline->addStorageTextureBinding(*m_accum_texture0, 2, WGPUStorageTextureAccess_ReadOnly,WGPUShaderStage_Compute);
-    m_pathtracing_pipeline->addStorageTextureBinding(*m_accum_texture1, 3, WGPUStorageTextureAccess_WriteOnly, WGPUShaderStage_Compute);
-    m_pathtracing_pipeline->addShader(*m_pathtracing_shader, "pathtracer");
+    m_pathtracing_pipeline->setBufferBinding(*m_input_buffer, 0, WGPUBufferBindingType_ReadOnlyStorage, WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->setBufferBinding(*m_output_buffer, 1, WGPUBufferBindingType_Storage, WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->setStorageTextureBinding(*m_accum_texture0, 2, WGPUStorageTextureAccess_ReadOnly,WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->setStorageTextureBinding(*m_accum_texture1, 3, WGPUStorageTextureAccess_WriteOnly, WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->setShader(*m_pathtracing_shader, "pathtracer");
     m_pathtracing_pipeline->commit(m_device);
 
     // create postprocessing pipeline
     Texture draw_target(m_surface);
     m_postprocessing_pipeline = std::make_unique<RenderPipeline>();
-    m_postprocessing_pipeline->addColorTarget(draw_target);
-    m_postprocessing_pipeline->addVertexShader(*m_postprocessing_shader, "vs_main");
-    m_postprocessing_pipeline->addFragmentShader(*m_postprocessing_shader, "fs_main");
-    m_postprocessing_pipeline->addVertexAttribute(0, 0, WGPUVertexFormat_Float32x2, 0L);
-    m_postprocessing_pipeline->addVertexBuffer(*m_fullscreen_quad, 2);
-    m_postprocessing_pipeline->addTextureBinding(*m_accum_texture1, 0, WGPUTextureSampleType_Float, WGPUShaderStage_Fragment);
+    m_postprocessing_pipeline->setColorTarget(draw_target);
+    m_postprocessing_pipeline->setVertexShader(*m_postprocessing_shader, "vs_main");
+    m_postprocessing_pipeline->setFragmentShader(*m_postprocessing_shader, "fs_main");
+    m_postprocessing_pipeline->setVertexAttribute(0, 0, WGPUVertexFormat_Float32x2, 0L);
+    m_postprocessing_pipeline->setVertexBuffer(*m_fullscreen_quad, 2);
+    m_postprocessing_pipeline->setTextureBinding(*m_accum_texture1, 0, WGPUTextureSampleType_Float, WGPUShaderStage_Fragment);
     m_postprocessing_pipeline->commit(m_device);
 
     /* we need this since we createa a texture from the surface without invalidating it */
@@ -397,6 +397,12 @@ WebGPURenderer::requestDeviceSync(WGPUAdapter adapter)
 void
 WebGPURenderer::resize(WGPUSurface surface, WGPUAdapter adapter, WGPUDevice device, uint32_t width, uint32_t height)
 {
+    if (m_prev_window_width == width && m_prev_window_height == height) {
+        return;
+    }
+    m_prev_window_width = width;
+    m_prev_window_height = height;
+
     // resize surface
     WGPUSurfaceConfiguration config = {};
     config.nextInChain = nullptr;
@@ -417,7 +423,18 @@ WebGPURenderer::resize(WGPUSurface surface, WGPUAdapter adapter, WGPUDevice devi
     wgpuSurfaceConfigure(surface, &config);
 
     // resize textures
-    // TODO: implement this
+    if (!m_accum_texture0 || !m_accum_texture1) {
+        return;
+    }
+    m_accum_texture0->resize(m_device, width, height);
+    m_accum_texture1->resize(m_device, width, height);
+    m_pathtracing_pipeline->setStorageTextureBinding(*m_accum_texture0, 2, WGPUStorageTextureAccess_ReadOnly,WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->setStorageTextureBinding(*m_accum_texture1, 3, WGPUStorageTextureAccess_WriteOnly, WGPUShaderStage_Compute);
+    m_postprocessing_pipeline->setTextureBinding(*m_accum_texture1, 0, WGPUTextureSampleType_Float, WGPUShaderStage_Fragment);
+
+    m_pathtracing_pipeline->commit(m_device);
+    m_postprocessing_pipeline->commit(m_device);
+    
 }
 
 }

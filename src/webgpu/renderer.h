@@ -32,6 +32,8 @@ struct WebGPURenderer : Renderer {
         // Helper functions for WebGPU
         WGPUAdapter requestAdapterSync(WGPUInstance instance);
         WGPUDevice  requestDeviceSync(WGPUAdapter adapter);
+        size_t      m_prev_window_width     { 0 };
+        size_t      m_prev_window_height    { 0 };
         void        resize(WGPUSurface surface, WGPUAdapter adapter, WGPUDevice device, uint32_t width, uint32_t height);
 
         // Objects related to WebGPU

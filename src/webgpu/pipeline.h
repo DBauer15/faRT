@@ -10,13 +10,12 @@
 
 namespace fart {
 
-/* TODO: Add descructors for everything here */
 struct Pipeline {
     public:
-        Pipeline() = default;
+        ~Pipeline();
 
         template<typename T>
-        void addBufferBinding(const Buffer<T> &buffer,  
+        void setBufferBinding(const Buffer<T> &buffer,  
                               uint32_t binding,
                               WGPUBufferBindingType binding_type,
                               WGPUShaderStageFlags visibility) {
@@ -25,7 +24,11 @@ struct Pipeline {
             layout_entry.buffer.type = binding_type;
             layout_entry.visibility = visibility;
 
-            m_bindgroup_layout_entries.push_back(layout_entry);
+            if (m_bindgroup_layout_entries.size() > binding) {
+                m_bindgroup_layout_entries[binding] = layout_entry;
+            } else {
+                m_bindgroup_layout_entries.push_back(layout_entry);
+            }
 
             WGPUBindGroupEntry bindgroup_entry = {};
             bindgroup_entry.binding = binding;
@@ -33,13 +36,17 @@ struct Pipeline {
             bindgroup_entry.offset = 0;
             bindgroup_entry.size = buffer.getSize();
 
-            m_bindgroup_entries.push_back(bindgroup_entry);
+            if (m_bindgroup_entries.size() > binding) {
+                m_bindgroup_entries[binding] = bindgroup_entry;
+            } else {
+                m_bindgroup_entries.push_back(bindgroup_entry);
+            }
         }
-        void addTextureBinding(const Texture &texture, 
+        void setTextureBinding(const Texture &texture, 
                                uint32_t binding,
                                WGPUTextureSampleType sample_type,
                                WGPUShaderStageFlags visibility);
-        void addStorageTextureBinding(const Texture &texture,
+        void setStorageTextureBinding(const Texture &texture,
                                       uint32_t binding,
                                       WGPUStorageTextureAccess access,
                                       WGPUShaderStageFlags visibility);
@@ -59,7 +66,9 @@ struct Pipeline {
 
 struct ComputePipeline : public Pipeline {
     public:
-        void addShader(const Shader &shader, std::string entrypoint);
+        ~ComputePipeline();
+
+        void setShader(const Shader &shader, std::string entrypoint);
 
         virtual void commit(WGPUDevice device) override;
 
@@ -73,13 +82,15 @@ struct ComputePipeline : public Pipeline {
 
 struct RenderPipeline : public Pipeline {
     public:
-        void addColorTarget(const Texture &target);
-        void addVertexShader(const Shader &shader, std::string entrypoint);
-        void addFragmentShader(const Shader &shader, std::string entrypoint);
-        void addVertexAttribute(uint32_t buffer_id, uint32_t location, WGPUVertexFormat format, uint64_t offset);
+        ~RenderPipeline();
+
+        void setColorTarget(const Texture &target);
+        void setVertexShader(const Shader &shader, std::string entrypoint);
+        void setFragmentShader(const Shader &shader, std::string entrypoint);
+        void setVertexAttribute(uint32_t buffer_id, uint32_t location, WGPUVertexFormat format, uint64_t offset);
 
         template<typename T>
-        void addVertexBuffer(const Buffer<T> &buffer, size_t element_stride) {
+        void setVertexBuffer(const Buffer<T> &buffer, size_t element_stride) {
             if (m_vertex_attributes.find(m_vertex_buffer_layouts.size()) == m_vertex_attributes.end()) {
                 ERR("No attributes configured for buffer " + m_vertex_buffer_layouts.size());
                 ERR("Vertex buffer not configured");

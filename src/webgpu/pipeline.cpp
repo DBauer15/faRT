@@ -3,8 +3,20 @@
 namespace fart 
 {
 
+Pipeline::~Pipeline() {
+    if (m_bindgroup_layout) {
+        wgpuBindGroupLayoutRelease(m_bindgroup_layout);
+    }
+    if (m_bindgroup) {
+        wgpuBindGroupRelease(m_bindgroup);
+    }
+    if (m_pipeline_layout) {
+        wgpuPipelineLayoutRelease(m_pipeline_layout);
+    }
+}
+
 void 
-Pipeline::addTextureBinding(const Texture &texture, uint32_t binding, WGPUTextureSampleType sample_type, WGPUShaderStageFlags visibility) {
+Pipeline::setTextureBinding(const Texture &texture, uint32_t binding, WGPUTextureSampleType sample_type, WGPUShaderStageFlags visibility) {
     WGPUBindGroupLayoutEntry layout_entry = {};
     layout_entry.binding = binding;
     layout_entry.visibility = visibility;
@@ -12,17 +24,25 @@ Pipeline::addTextureBinding(const Texture &texture, uint32_t binding, WGPUTextur
     layout_entry.texture.viewDimension = WGPUTextureViewDimension_2D;
     layout_entry.texture.sampleType = sample_type;
 
-    m_bindgroup_layout_entries.push_back(layout_entry);
+    if (m_bindgroup_layout_entries.size() > binding) {
+        m_bindgroup_layout_entries[binding] = layout_entry;
+    } else {
+        m_bindgroup_layout_entries.push_back(layout_entry);
+    }
 
     WGPUBindGroupEntry bindgroup_entry = {};
     bindgroup_entry.binding = binding;
     bindgroup_entry.textureView = texture.getTextureView();
 
-    m_bindgroup_entries.push_back(bindgroup_entry);
+    if (m_bindgroup_entries.size() > binding) {
+        m_bindgroup_entries[binding] = bindgroup_entry;
+    } else {
+        m_bindgroup_entries.push_back(bindgroup_entry);
+    }
 }
 
 void
-Pipeline::addStorageTextureBinding(const Texture &texture, uint32_t binding, WGPUStorageTextureAccess access, WGPUShaderStageFlags visibility) {
+Pipeline::setStorageTextureBinding(const Texture &texture, uint32_t binding, WGPUStorageTextureAccess access, WGPUShaderStageFlags visibility) {
     WGPUBindGroupLayoutEntry layout_entry = {};
     layout_entry.binding = binding;
     layout_entry.visibility = visibility;
@@ -30,17 +50,36 @@ Pipeline::addStorageTextureBinding(const Texture &texture, uint32_t binding, WGP
     layout_entry.storageTexture.format = texture.getFormat();
     layout_entry.storageTexture.viewDimension = texture.getViewDimension();
 
-    m_bindgroup_layout_entries.push_back(layout_entry);
+    if (m_bindgroup_layout_entries.size() > binding) {
+        m_bindgroup_layout_entries[binding] = layout_entry;
+    } else {
+        m_bindgroup_layout_entries.push_back(layout_entry);
+    }
 
     WGPUBindGroupEntry bindgroup_entry = {};
     bindgroup_entry.binding = binding;
     bindgroup_entry.textureView = texture.getTextureView();
 
-    m_bindgroup_entries.push_back(bindgroup_entry);
+    if (m_bindgroup_entries.size() > binding) {
+        m_bindgroup_entries[binding] = bindgroup_entry;
+    } else {
+        m_bindgroup_entries.push_back(bindgroup_entry);
+    }
 }
 
 void
 Pipeline::commit(WGPUDevice device) {
+    // clean up
+    if (m_bindgroup_layout) {
+        wgpuBindGroupLayoutRelease(m_bindgroup_layout);
+    }
+    if (m_bindgroup) {
+        wgpuBindGroupRelease(m_bindgroup);
+    }
+    if (m_pipeline_layout) {
+        wgpuPipelineLayoutRelease(m_pipeline_layout);
+    }
+
     // create bindgroup layout
     WGPUBindGroupLayoutDescriptor bindgroup_layout_descriptor = {};
     bindgroup_layout_descriptor.entries = m_bindgroup_layout_entries.data();
@@ -64,8 +103,14 @@ Pipeline::commit(WGPUDevice device) {
     m_pipeline_layout = wgpuDeviceCreatePipelineLayout(device, &pipeline_layout_descriptor);
 }
 
+ComputePipeline::~ComputePipeline() {
+    if (m_compute_pipeline) {
+        wgpuComputePipelineRelease(m_compute_pipeline);
+    }
+}
+
 void
-ComputePipeline::addShader(const Shader &shader, std::string entrypoint) {
+ComputePipeline::setShader(const Shader &shader, std::string entrypoint) {
     m_shader = shader.getShader();
     m_shader_entrypoint = entrypoint;
 }
@@ -73,6 +118,11 @@ ComputePipeline::addShader(const Shader &shader, std::string entrypoint) {
 void
 ComputePipeline::commit(WGPUDevice device) {
     Pipeline::commit(device);
+
+    // clearn up
+    if (m_compute_pipeline) {
+        wgpuComputePipelineRelease(m_compute_pipeline);
+    }
 
     // create pipeline
     WGPUComputePipelineDescriptor pipeline_descriptor = {};
@@ -83,8 +133,14 @@ ComputePipeline::commit(WGPUDevice device) {
     m_compute_pipeline = wgpuDeviceCreateComputePipeline(device, &pipeline_descriptor);
 }
 
+RenderPipeline::~RenderPipeline() {
+    if (m_render_pipeline) {
+        wgpuRenderPipelineRelease(m_render_pipeline);
+    }
+}
+
 void 
-RenderPipeline::addColorTarget(const Texture &target) {
+RenderPipeline::setColorTarget(const Texture &target) {
     m_blend_state.color.srcFactor = WGPUBlendFactor_SrcAlpha;
 	m_blend_state.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
 	m_blend_state.color.operation = WGPUBlendOperation_Add;
@@ -101,19 +157,19 @@ RenderPipeline::addColorTarget(const Texture &target) {
 }
 
 void 
-RenderPipeline::addVertexShader(const Shader &shader, std::string entrypoint) {
+RenderPipeline::setVertexShader(const Shader &shader, std::string entrypoint) {
     m_vertex_shader = shader.getShader();
     m_vertex_shader_entrypoint = entrypoint;
 }
 
 void 
-RenderPipeline::addFragmentShader(const Shader &shader, std::string entrypoint) {
+RenderPipeline::setFragmentShader(const Shader &shader, std::string entrypoint) {
     m_fragment_shader = shader.getShader();
     m_fragment_shader_entrypoint = entrypoint;
 }
 
 void 
-RenderPipeline::addVertexAttribute(uint32_t buffer_id, uint32_t location, WGPUVertexFormat format, uint64_t offset) {
+RenderPipeline::setVertexAttribute(uint32_t buffer_id, uint32_t location, WGPUVertexFormat format, uint64_t offset) {
     WGPUVertexAttribute attribute;
     attribute.format = format;
     attribute.shaderLocation = location;
@@ -125,6 +181,11 @@ RenderPipeline::addVertexAttribute(uint32_t buffer_id, uint32_t location, WGPUVe
 void
 RenderPipeline::commit(WGPUDevice device) {
     Pipeline::commit(device);
+
+    // clean up
+    if (m_render_pipeline) {
+        wgpuRenderPipelineRelease(m_render_pipeline);
+    }
 
     // create pipeline
     WGPURenderPipelineDescriptor pipeline_descriptor = {};
