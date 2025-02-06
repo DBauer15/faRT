@@ -1,5 +1,7 @@
 #include "renderer.h"
 
+#include <chrono>
+
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -417,7 +419,7 @@ WebGPURenderer::resize(WGPUSurface surface, WGPUAdapter adapter, WGPUDevice devi
     config.usage = WGPUTextureUsage_RenderAttachment;
     config.device = device;
 
-    config.presentMode = WGPUPresentMode_Fifo;
+    config.presentMode = WGPUPresentMode_Immediate;
     config.alphaMode = WGPUCompositeAlphaMode_Auto;
 
     wgpuSurfaceConfigure(surface, &config);
