@@ -1,5 +1,6 @@
 #include "renderer.h"
 
+#include <glm/glm.hpp>
 #include <chrono>
 
 #ifdef __EMSCRIPTEN__
@@ -84,14 +85,14 @@ WebGPURenderer::initWebGPU()
 
 void
 WebGPURenderer::initBuffers() {
-    // create input buffer
-    m_input_buffer = std::make_unique<Buffer<float>>(m_device, 64L, (WGPUBufferUsage)(WGPUBufferUsage_Storage | WGPUBufferUsage_CopyDst));
+    // create uniforms buffer
+    m_uniforms_buffer = std::make_unique<Buffer<WebGPURendererUniforms>>(m_device, 1L, (WGPUBufferUsage)(WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst));
 
     // create output buffer
     m_output_buffer = std::make_unique<Buffer<float>>(m_device, 64L, (WGPUBufferUsage)(WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc));
 
     // create fullscreen quad buffer
-    m_fullscreen_quad = std::make_unique<Buffer<float>>(m_device, 12L, (WGPUBufferUsage)(WGPUBufferUsage_Vertex | WGPUBufferUsage_CopyDst));
+    m_fullscreen_quad_buffer = std::make_unique<Buffer<float>>(m_device, 12L, (WGPUBufferUsage)(WGPUBufferUsage_Vertex | WGPUBufferUsage_CopyDst));
 }
 
 void
@@ -110,7 +111,7 @@ WebGPURenderer::initPipeline() {
 
     // create pathtracing pipeline
     m_pathtracing_pipeline = std::make_unique<ComputePipeline>();
-    m_pathtracing_pipeline->setBufferBinding(*m_input_buffer, 0, WGPUBufferBindingType_ReadOnlyStorage, WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->setBufferBinding(*m_uniforms_buffer, 0, WGPUBufferBindingType_Uniform, WGPUShaderStage_Compute);
     m_pathtracing_pipeline->setBufferBinding(*m_output_buffer, 1, WGPUBufferBindingType_Storage, WGPUShaderStage_Compute);
     m_pathtracing_pipeline->setStorageTextureBinding(*m_accum_texture0, 2, WGPUStorageTextureAccess_ReadOnly,WGPUShaderStage_Compute);
     m_pathtracing_pipeline->setStorageTextureBinding(*m_accum_texture1, 3, WGPUStorageTextureAccess_WriteOnly, WGPUShaderStage_Compute);
@@ -124,7 +125,7 @@ WebGPURenderer::initPipeline() {
     m_postprocessing_pipeline->setVertexShader(*m_postprocessing_shader, "vs_main");
     m_postprocessing_pipeline->setFragmentShader(*m_postprocessing_shader, "fs_main");
     m_postprocessing_pipeline->setVertexAttribute(0, 0, WGPUVertexFormat_Float32x2, 0L);
-    m_postprocessing_pipeline->setVertexBuffer(*m_fullscreen_quad, 2);
+    m_postprocessing_pipeline->setVertexBuffer(*m_fullscreen_quad_buffer, 2);
     m_postprocessing_pipeline->setTextureBinding(*m_accum_texture1, 0, WGPUTextureSampleType_Float, WGPUShaderStage_Fragment);
     m_postprocessing_pipeline->commit(m_device);
 
@@ -136,14 +137,10 @@ WebGPURenderer::initPipeline() {
 
 void
 WebGPURenderer::initBufferData() {
-    // fill buffers
-    std::vector<float> input(m_input_buffer->getNElements());
-    for (int i = 0; i < input.size(); ++i) {
-        input[i] = 0.1f * (i+1);
-    }
+    // create uniforms
+    m_uniforms_buffer->setData(m_device, m_queue, &m_uniforms, 1);
 
-    m_input_buffer->setData(m_device, m_queue, input);
-
+    // create fullscreen quad
     std::vector<float> quad {
         -1, -1,
         -1,  1,
@@ -152,7 +149,7 @@ WebGPURenderer::initBufferData() {
         1,  1,
         1, -1
     };
-    m_fullscreen_quad->setData(m_device, m_queue, quad);
+    m_fullscreen_quad_buffer->setData(m_device, m_queue, quad);
 }
 
 void 
@@ -162,6 +159,16 @@ WebGPURenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
 
     // Resize framebuffer if needed
     resize(m_surface, m_adapter, m_device, m_window->getWidth(), m_window->getHeight());
+
+    // Update uniforms
+    m_uniforms.frame_number = 0; /* TODO */
+    m_uniforms.scene_scale = 1.f; /* TODO */
+    m_uniforms.aspect_ratio = (float)(m_window->getWidth() / m_window->getHeight());
+    m_uniforms.eye = glm::vec4(eye, 0);
+    m_uniforms.dir = glm::vec4(dir, 0);
+    m_uniforms.up = glm::vec4(up, 0);
+    m_uniforms.viewport_size = m_window->getViewportSize();
+    m_uniforms_buffer->setData(m_device, m_queue, &m_uniforms, 1);
 
     // Run pathtracing pass
     renderpassPathtracer();
@@ -246,7 +253,7 @@ WebGPURenderer::renderpassPostprocess() {
 	// Select which render pipeline to use
 	wgpuRenderPassEncoderSetPipeline(renderpass_encoder, m_postprocessing_pipeline->getRenderPipeline());
     wgpuRenderPassEncoderSetBindGroup(renderpass_encoder, 0, m_postprocessing_pipeline->getBindGroup(), 0, nullptr); 
-	wgpuRenderPassEncoderSetVertexBuffer(renderpass_encoder, 0, m_fullscreen_quad->getBuffer(), 0, m_fullscreen_quad->getSize());
+	wgpuRenderPassEncoderSetVertexBuffer(renderpass_encoder, 0, m_fullscreen_quad_buffer->getBuffer(), 0, m_fullscreen_quad_buffer->getSize());
 
 	wgpuRenderPassEncoderDraw(renderpass_encoder, 6, 1, 0, 0);
 

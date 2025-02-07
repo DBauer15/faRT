@@ -12,6 +12,16 @@
 
 namespace fart {
 
+struct alignas(16) WebGPURendererUniforms {
+    uint32_t frame_number;
+    float scene_scale;
+    float aspect_ratio;
+    glm::vec4 eye;
+    glm::vec4 dir;
+    glm::vec4 up;
+    glm::vec2 viewport_size;
+};
+
 struct WebGPURenderer : Renderer {
     public:
         ~WebGPURenderer();
@@ -22,7 +32,7 @@ struct WebGPURenderer : Renderer {
         }
 
         virtual size_t preferredVertexAlignment() override {
-            return 8;
+            return 16;
         }
 
     private:
@@ -52,9 +62,11 @@ struct WebGPURenderer : Renderer {
         std::unique_ptr<Texture> m_accum_texture1       { nullptr };
 
         // WebGPU data resources
-        std::unique_ptr<Buffer<float>> m_input_buffer   { nullptr };
+        WebGPURendererUniforms         m_uniforms       { };
+        std::unique_ptr<Buffer<WebGPURendererUniforms>> 
+                                       m_uniforms_buffer{ nullptr };
         std::unique_ptr<Buffer<float>> m_output_buffer  { nullptr };
-        std::unique_ptr<Buffer<float>> m_fullscreen_quad { nullptr };
+        std::unique_ptr<Buffer<float>> m_fullscreen_quad_buffer { nullptr };
 
         // Private helper functions
         void initWebGPU();
