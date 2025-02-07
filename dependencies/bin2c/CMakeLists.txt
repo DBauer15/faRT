@@ -1,1 +1,1 @@
-include(bin2c.cmake)
+include(embed_shaders.cmake)
