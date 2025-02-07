@@ -102,7 +102,7 @@ Texture::resize(WGPUDevice device, const uint32_t width, const uint32_t height) 
 
     m_texture = wgpuDeviceCreateTexture(device, &descriptor);
 
-    WGPUTextureViewDescriptor view_descriptor;
+    WGPUTextureViewDescriptor view_descriptor = {};
     view_descriptor.aspect = WGPUTextureAspect_All;
     view_descriptor.baseArrayLayer = 0;
     view_descriptor.arrayLayerCount = 1;

@@ -327,7 +327,7 @@ WebGPURenderer::requestAdapterSync(WGPUInstance instance)
 WGPUDevice 
 WebGPURenderer::requestDeviceSync(WGPUAdapter adapter) 
 {
-    WGPUSupportedLimits supported_limits;
+    WGPUSupportedLimits supported_limits = {};
     wgpuAdapterGetLimits(m_adapter, &supported_limits);
     WGPURequiredLimits required_limits = {};
     required_limits.limits.maxVertexBuffers = 1;
