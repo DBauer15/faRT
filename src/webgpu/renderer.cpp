@@ -156,7 +156,7 @@ WebGPURenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
     resize(m_surface, m_adapter, m_device, m_window->getWidth(), m_window->getHeight());
 
     // Update uniforms
-    m_uniforms.frame_number = 0; /* TODO */
+    m_uniforms.frame_number = m_frame_no;
     m_uniforms.scene_scale = 1.f; /* TODO */
     m_uniforms.aspect_ratio = ((float)m_window->getWidth() / m_window->getHeight());
     m_uniforms.eye = glm::vec4(eye, 0);
@@ -179,6 +179,7 @@ WebGPURenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
 
     auto frame_time_mus = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t_start);
     render_stats.frame_time_ms = frame_time_mus.count() * 0.001f;
+    m_frame_no += 1;
 
 }
 

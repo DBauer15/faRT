@@ -36,6 +36,7 @@ struct WebGPURenderer : Renderer {
         }
 
     private:
+        uint32_t m_frame_no { 0 };
         std::shared_ptr<Scene>  m_scene;
         std::shared_ptr<Window> m_window;
 
