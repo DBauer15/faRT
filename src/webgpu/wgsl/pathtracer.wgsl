@@ -47,7 +47,7 @@ fn intersect(ray: Ray) -> SurfaceInteraction {
 fn miss(ray: Ray) -> vec4f {
     let sky = vec4f(70./255., 169./255., 235./255., 1.0);
     let haze = vec4f(127./255., 108./255., 94./255., 1.0);
-    let background = mix(sky, haze, (ray.d.x + 1.0) /2.0);
+    let background = mix(sky, haze, (ray.d.y + 1.0) /2.0);
     return background;
 }
 

@@ -53,8 +53,10 @@ void App::processFrame() {
     m_window->update();
 
     // process input
+#ifndef __EMSCRIPTEN__
     if (m_window->isWindowFocused())
     {
+#endif
         // camera update
         if (m_window->isMouseLeftPressed())
             m_camera->rotate(m_window->getPrevMousePosition(), m_window->getMousePosition());
@@ -77,7 +79,9 @@ void App::processFrame() {
         {
             m_camera_mode_changed = false;
         }
+#ifndef __EMSCRIPTEN__
     }
+#endif
 
     // render pass
     RenderStats render_stats;

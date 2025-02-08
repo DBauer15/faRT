@@ -422,7 +422,11 @@ WebGPURenderer::resize(WGPUSurface surface, WGPUAdapter adapter, WGPUDevice devi
     config.usage = WGPUTextureUsage_RenderAttachment;
     config.device = device;
 
+#ifdef WEBGPU_BACKEND_EMSCRIPTEN
+    config.presentMode = WGPUPresentMode_Fifo;
+#else
     config.presentMode = WGPUPresentMode_Immediate;
+#endif
     config.alphaMode = WGPUCompositeAlphaMode_Auto;
 
     wgpuSurfaceConfigure(surface, &config);
