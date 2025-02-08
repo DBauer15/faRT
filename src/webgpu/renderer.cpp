@@ -88,9 +88,6 @@ WebGPURenderer::initBuffers() {
     // create uniforms buffer
     m_uniforms_buffer = std::make_unique<Buffer<WebGPURendererUniforms>>(m_device, 1L, (WGPUBufferUsage)(WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst));
 
-    // create output buffer
-    m_output_buffer = std::make_unique<Buffer<float>>(m_device, 64L, (WGPUBufferUsage)(WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc));
-
     // create fullscreen quad buffer
     m_fullscreen_quad_buffer = std::make_unique<Buffer<float>>(m_device, 12L, (WGPUBufferUsage)(WGPUBufferUsage_Vertex | WGPUBufferUsage_CopyDst));
 }
@@ -112,9 +109,7 @@ WebGPURenderer::initPipeline() {
     // create pathtracing pipeline
     m_pathtracing_pipeline = std::make_unique<ComputePipeline>();
     m_pathtracing_pipeline->setBufferBinding(*m_uniforms_buffer, 0, WGPUBufferBindingType_Uniform, WGPUShaderStage_Compute);
-    m_pathtracing_pipeline->setBufferBinding(*m_output_buffer, 1, WGPUBufferBindingType_Storage, WGPUShaderStage_Compute);
-    m_pathtracing_pipeline->setStorageTextureBinding(*m_accum_texture0, 2, WGPUStorageTextureAccess_ReadOnly,WGPUShaderStage_Compute);
-    m_pathtracing_pipeline->setStorageTextureBinding(*m_accum_texture1, 3, WGPUStorageTextureAccess_WriteOnly, WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->setStorageTextureBinding(*m_accum_texture1, 1, WGPUStorageTextureAccess_WriteOnly, WGPUShaderStage_Compute);
     m_pathtracing_pipeline->setShader(*m_pathtracing_shader, "pathtracer");
     m_pathtracing_pipeline->commit(m_device);
 
@@ -163,11 +158,12 @@ WebGPURenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
     // Update uniforms
     m_uniforms.frame_number = 0; /* TODO */
     m_uniforms.scene_scale = 1.f; /* TODO */
-    m_uniforms.aspect_ratio = (float)(m_window->getWidth() / m_window->getHeight());
+    m_uniforms.aspect_ratio = ((float)m_window->getWidth() / m_window->getHeight());
     m_uniforms.eye = glm::vec4(eye, 0);
     m_uniforms.dir = glm::vec4(dir, 0);
     m_uniforms.up = glm::vec4(up, 0);
-    m_uniforms.viewport_size = m_window->getViewportSize();
+    m_uniforms.viewport_size.x = m_window->getWidth();
+    m_uniforms.viewport_size.y = m_window->getHeight();
     m_uniforms_buffer->setData(m_device, m_queue, &m_uniforms, 1);
 
     // Run pathtracing pass
@@ -187,7 +183,7 @@ WebGPURenderer::render(const glm::vec3 eye, const glm::vec3 dir, const glm::vec3
 }
 
 void WebGPURenderer::renderpassPathtracer()
-{ 
+{
     // Create command encoder
     WGPUCommandEncoderDescriptor encoder_descriptor = {};
     WGPUCommandEncoder command_encoder = wgpuDeviceCreateCommandEncoder(m_device, &encoder_descriptor);

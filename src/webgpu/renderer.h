@@ -12,14 +12,14 @@
 
 namespace fart {
 
-struct alignas(16) WebGPURendererUniforms {
-    uint32_t frame_number;
-    float scene_scale;
-    float aspect_ratio;
-    glm::vec4 eye;
-    glm::vec4 dir;
-    glm::vec4 up;
-    glm::vec2 viewport_size;
+struct WebGPURendererUniforms {
+    alignas(4) uint32_t frame_number;
+    alignas(4) float scene_scale;
+    alignas(4) float aspect_ratio;
+    alignas(16) glm::vec4 eye;
+    alignas(16) glm::vec4 dir;
+    alignas(16) glm::vec4 up;
+    alignas(16) glm::u32vec4 viewport_size;
 };
 
 struct WebGPURenderer : Renderer {
@@ -65,7 +65,6 @@ struct WebGPURenderer : Renderer {
         WebGPURendererUniforms         m_uniforms       { };
         std::unique_ptr<Buffer<WebGPURendererUniforms>> 
                                        m_uniforms_buffer{ nullptr };
-        std::unique_ptr<Buffer<float>> m_output_buffer  { nullptr };
         std::unique_ptr<Buffer<float>> m_fullscreen_quad_buffer { nullptr };
 
         // Private helper functions
