@@ -39,6 +39,7 @@ WebGPURenderer::init(std::shared_ptr<Scene> &scene, std::shared_ptr<Window> &win
     m_window = window;
 
     initWebGPU();
+    initAccelerationStructures();
     initBuffers();
     initTextures();
     initPipeline();
@@ -83,10 +84,34 @@ WebGPURenderer::initWebGPU()
     resize(m_surface, m_adapter, m_device, m_window->getWidth(), m_window->getHeight());
 }
 
+void 
+WebGPURenderer::initAccelerationStructures() {
+    m_bvh = std::make_unique<BVH>(m_scene->getObjects()[0], BVHSplitMethod::SAH);
+}
+
 void
 WebGPURenderer::initBuffers() {
     // create uniforms buffer
     m_uniforms_buffer = std::make_unique<Buffer<WebGPURendererUniforms>>(m_device, 1L, (WGPUBufferUsage)(WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst));
+
+    // get sizes for geometry buffers
+    size_t total_vertices = 0;
+    size_t total_indices = 0;
+    for (auto& object : m_scene->getObjects()) {
+        for (auto& geometry: object.geometries) {
+            total_vertices += geometry.positions.size();
+            total_indices += geometry.indices.size();
+        }
+    }
+
+    // create vertices buffer
+    m_vertices_buffer = std::make_unique<Buffer<Vertex>>(m_device, total_vertices, (WGPUBufferUsage)(WGPUBufferUsage_Storage | WGPUBufferUsage_CopyDst));
+
+    // create indices buffer
+    m_indices_buffer = std::make_unique<Buffer<uint32_t>>(m_device, total_indices, (WGPUBufferUsage)(WGPUBufferUsage_Storage | WGPUBufferUsage_CopyDst));
+
+    // create bvh buffer
+    m_bvh_buffer = std::make_unique<Buffer<BVHNode>>(m_device, m_bvh->getNodes().size(), (WGPUBufferUsage)(WGPUBufferUsage_Storage | WGPUBufferUsage_CopyDst));
 
     // create fullscreen quad buffer
     m_fullscreen_quad_buffer = std::make_unique<Buffer<float>>(m_device, 12L, (WGPUBufferUsage)(WGPUBufferUsage_Vertex | WGPUBufferUsage_CopyDst));
@@ -109,7 +134,10 @@ WebGPURenderer::initPipeline() {
     // create pathtracing pipeline
     m_pathtracing_pipeline = std::make_unique<ComputePipeline>();
     m_pathtracing_pipeline->setBufferBinding(*m_uniforms_buffer, 0, WGPUBufferBindingType_Uniform, WGPUShaderStage_Compute);
-    m_pathtracing_pipeline->setStorageTextureBinding(*m_accum_texture1, 1, WGPUStorageTextureAccess_WriteOnly, WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->setBufferBinding(*m_vertices_buffer, 1, WGPUBufferBindingType_ReadOnlyStorage, WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->setBufferBinding(*m_indices_buffer, 2, WGPUBufferBindingType_ReadOnlyStorage, WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->setBufferBinding(*m_bvh_buffer, 3, WGPUBufferBindingType_ReadOnlyStorage, WGPUShaderStage_Compute);
+    m_pathtracing_pipeline->setStorageTextureBinding(*m_accum_texture1, 4, WGPUStorageTextureAccess_WriteOnly, WGPUShaderStage_Compute);
     m_pathtracing_pipeline->setShader(*m_pathtracing_shader, "pathtracer");
     m_pathtracing_pipeline->commit(m_device);
 
@@ -145,6 +173,16 @@ WebGPURenderer::initBufferData() {
         1, -1
     };
     m_fullscreen_quad_buffer->setData(m_device, m_queue, quad);
+
+    // upload geometry
+    m_vertices_buffer->setData(m_device, m_queue, m_bvh->getVertices());
+
+    // upload indices
+    m_indices_buffer->setData(m_device, m_queue, m_bvh->getIndices());
+
+    // upload bvh
+    m_bvh_buffer->setData(m_device, m_queue, (BVHNode*)m_bvh->getNodes().data(), m_bvh->getNodesUsed(), 0);
+
 }
 
 void 
@@ -335,7 +373,7 @@ WebGPURenderer::requestDeviceSync(WGPUAdapter adapter)
 	required_limits.limits.maxUniformBufferBindingSize = 64 * sizeof(float);
     required_limits.limits.minUniformBufferOffsetAlignment = supported_limits.limits.minUniformBufferOffsetAlignment;
 	required_limits.limits.minStorageBufferOffsetAlignment = supported_limits.limits.minStorageBufferOffsetAlignment;
-	required_limits.limits.maxBufferSize = 64 * 4;
+	required_limits.limits.maxBufferSize = 50000000 * sizeof(Vertex);
 	required_limits.limits.maxTextureDimension1D = 4096;
 	required_limits.limits.maxTextureDimension2D = 4096;
 	required_limits.limits.maxTextureDimension3D = 2048; 
@@ -344,14 +382,14 @@ WebGPURenderer::requestDeviceSync(WGPUAdapter adapter)
     required_limits.limits.maxStorageTexturesPerShaderStage = 3;
 	required_limits.limits.maxSamplersPerShaderStage = 1;
 	required_limits.limits.maxInterStageShaderComponents = 17;
-	required_limits.limits.maxStorageBuffersPerShaderStage = 2;
 	required_limits.limits.maxComputeWorkgroupSizeX = 32;
 	required_limits.limits.maxComputeWorkgroupSizeY = 32;
 	required_limits.limits.maxComputeWorkgroupSizeZ = 1;
 	required_limits.limits.maxComputeInvocationsPerWorkgroup = 1024;
 	required_limits.limits.maxComputeWorkgroupsPerDimension = 192;
-    required_limits.limits.maxStorageBufferBindingSize = 64 * 4;
-    required_limits.limits.maxBindingsPerBindGroup = 3;
+    required_limits.limits.maxStorageBufferBindingSize = 50000000 * sizeof(Vertex);
+    required_limits.limits.maxBindingsPerBindGroup = 5;
+    required_limits.limits.maxStorageBuffersPerShaderStage = 5;
 
     WGPUDeviceDescriptor descriptor = {};
     descriptor.nextInChain = nullptr;

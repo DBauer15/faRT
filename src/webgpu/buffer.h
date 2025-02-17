@@ -20,7 +20,8 @@ struct Buffer {
         }
 
         void resize(WGPUDevice device, size_t n_elements) {
-                if (n_elements == m_n_elements) {
+                /* TODO: This prevents buffers from shrinking */
+                if (n_elements <= m_n_elements) {
                     return;
                 }
 
@@ -39,13 +40,13 @@ struct Buffer {
                 m_buffer = wgpuDeviceCreateBuffer(device, &descriptor);
         }
 
-        void setData(WGPUDevice device, WGPUQueue queue, std::vector<T> data) {
+        void setData(WGPUDevice device, WGPUQueue queue, std::vector<T> data, size_t offset = 0) {
             resize(device, data.size());
-            wgpuQueueWriteBuffer(queue, m_buffer, 0, data.data(), data.size() * sizeof(T));
+            wgpuQueueWriteBuffer(queue, m_buffer, offset, data.data(), data.size() * sizeof(T));
         }
-        void setData(WGPUDevice device, WGPUQueue queue, T* data, size_t n_elements) {
+        void setData(WGPUDevice device, WGPUQueue queue, T* data, size_t n_elements, size_t offset = 0) {
             resize(device, n_elements);
-            wgpuQueueWriteBuffer(queue, m_buffer, 0, data, n_elements * sizeof(T));
+            wgpuQueueWriteBuffer(queue, m_buffer, offset, data, n_elements * sizeof(T));
         }
 
         WGPUBuffer getBuffer() const    { return m_buffer; }

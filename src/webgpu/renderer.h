@@ -2,25 +2,18 @@
 
 #include <webgpu/webgpu.h>
 
+#include "types.h"
 #include "texture.h"
 #include "pipeline.h"
 #include "shader.h"
 #include "buffer.h"
+#include "bvh.h"
 
 #include "common/renderer.h"
 #include "common/window.h"
 
 namespace fart {
 
-struct WebGPURendererUniforms {
-    alignas(4) uint32_t frame_number;
-    alignas(4) float scene_scale;
-    alignas(4) float aspect_ratio;
-    alignas(16) glm::vec4 eye;
-    alignas(16) glm::vec4 dir;
-    alignas(16) glm::vec4 up;
-    alignas(16) glm::u32vec4 viewport_size;
-};
 
 struct WebGPURenderer : Renderer {
     public:
@@ -32,7 +25,7 @@ struct WebGPURenderer : Renderer {
         }
 
         virtual size_t preferredVertexAlignment() override {
-            return 16;
+            return 8;
         }
 
     private:
@@ -63,13 +56,21 @@ struct WebGPURenderer : Renderer {
         std::unique_ptr<Texture> m_accum_texture1       { nullptr };
 
         // WebGPU data resources
-        WebGPURendererUniforms         m_uniforms       { };
+        WebGPURendererUniforms          m_uniforms        { };
         std::unique_ptr<Buffer<WebGPURendererUniforms>> 
-                                       m_uniforms_buffer{ nullptr };
-        std::unique_ptr<Buffer<float>> m_fullscreen_quad_buffer { nullptr };
+                                        m_uniforms_buffer { nullptr };
+        std::unique_ptr<Buffer<Vertex>> 
+                                        m_vertices_buffer { nullptr };
+        std::unique_ptr<Buffer<uint32_t>>   
+                                        m_indices_buffer  { nullptr };
+        std::unique_ptr<BVH>            m_bvh             { nullptr };
+        std::unique_ptr<Buffer<BVHNode>>
+                                        m_bvh_buffer      { nullptr };
+        std::unique_ptr<Buffer<float>>  m_fullscreen_quad_buffer { nullptr };
 
         // Private helper functions
         void initWebGPU();
+        void initAccelerationStructures();
         void initBuffers(); 
         void initTextures();
         void initPipeline();

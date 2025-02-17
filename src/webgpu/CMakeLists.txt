@@ -3,6 +3,10 @@ if (NOT BUILD_WEBGPU_RENDERER)
 endif()
 
 add_library(renderer_webgpu
+    aabb.cpp
+    aabb.h
+    bvh.cpp
+    bvh.h
     buffer.cpp
     buffer.h
     pipeline.cpp
